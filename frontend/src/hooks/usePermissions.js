@@ -1,0 +1,1 @@
+// Hook để kiểm tra quyền hạn của người dùng

@@ -1,0 +1,1 @@
+// Xử lý các thao tác với văn bản

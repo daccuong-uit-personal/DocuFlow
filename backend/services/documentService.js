@@ -1,0 +1,1 @@
+// Logic nghiệp vụ cho văn bản

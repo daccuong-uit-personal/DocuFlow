@@ -1,0 +1,1 @@
+// Các route liên quan đến quyền hạn (/api/permissions)

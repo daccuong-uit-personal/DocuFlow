@@ -1,0 +1,1 @@
+// Định nghĩa các hằng số (ROLES, DOCUMENT_STATUS, PERMISSIONS_LIST)
