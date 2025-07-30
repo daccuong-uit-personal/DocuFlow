@@ -1,0 +1,1 @@
+// Hàm mã hóa mật khẩu

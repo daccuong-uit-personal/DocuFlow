@@ -1,0 +1,1 @@
+// Hàm tạo và xác thực JSON Web Token

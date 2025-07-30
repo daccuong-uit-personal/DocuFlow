@@ -1,0 +1,1 @@
+// Định nghĩa các hằng số (tên quyền, vai trò, trạng thái tài liệu)

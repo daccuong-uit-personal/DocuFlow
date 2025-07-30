@@ -1,0 +1,1 @@
+// Bảng hiển thị dữ liệu (danh sách người dùng, văn bản)

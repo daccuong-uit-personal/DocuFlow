@@ -1,0 +1,1 @@
+// Schema và Model cho văn bản
