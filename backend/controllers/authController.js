@@ -1,56 +1,65 @@
 // Xử lý logic đăng nhập, đăng ký
+
+const { login, changePassword } = require('../services/authService');
+
 const authService = require('../services/authService');
 
 exports.login = async (req, res) => {
-    const { userName, password } = req.body;
+    try {
+        const { userName, password } = req.body;
+        const user = await login(userName, password);
 
-    if (!userName || !password) {
-        return res.status(400).json({ message: 'Vui lòng nhập tên đăng nhập và mật khẩu' });
+        req.session.user = {
+            id: user._id,
+            userName: user.userName,
+            name: user.name,
+            role: user.role
+        };
+
+        res.status(200).json({ message: 'Đăng nhập thành công', user: req.session.user });
+    } catch (error) {
+        res.status(400).json({ message: error.message });
     }
-
-    const user = await authService.login(userName, password);
-
-    if (!user) {
-        return res.status(401).json({ message: 'Sai tài khoản hoặc mật khẩu' });
-    }
-
-    // Lưu session
-    req.session.user = {
-        id: user._id,
-        userName: user.userName,
-        name: user.name,
-        role: user.role
-    };
-
-    res.status(200).json({ message: 'Đăng nhập thành công', user: req.session.user });
 };
 
 exports.logout = (req, res) => {
-    req.session.destroy((err) => {
-        if (err) return res.status(500).json({ message: 'Không thể đăng xuất' });
-        res.clearCookie('connect.sid');
+    req.session.destroy(err => {
+        if (err) {
+            return res.status(500).json({ message: 'Lỗi khi đăng xuất' });
+        }
         res.status(200).json({ message: 'Đăng xuất thành công' });
     });
 };
 
 exports.changePassword = async (req, res) => {
-    const userId = req.session?.user?.id;
+    try {
+        const { oldPassword, newPassword } = req.body;
+        const userId = req.session.user.id;
 
-    if (!userId) {
-        return res.status(401).json({ message: 'Bạn chưa đăng nhập' });
+        await changePassword(userId, oldPassword, newPassword);
+        res.status(200).json({ message: 'Đổi mật khẩu thành công' });
+    } catch (error) {
+        res.status(400).json({ message: error.message });
     }
+};
 
-    const { oldPassword, newPassword } = req.body;
-
-    if (!oldPassword || !newPassword) {
-        return res.status(400).json({ message: 'Vui lòng nhập đủ mật khẩu cũ và mới' });
+exports.registerUser = async (req, res) => {
+    try {
+        const newUser = await authService.register(req.body);
+        res.status(201).json({
+            message: 'Đăng ký thành công',
+            user: {
+                _id: newUser._id,
+                userName: newUser.userName,
+                name: newUser.name,
+                gender: newUser.gender,
+                phoneNumber: newUser.phoneNumber,
+                dayOfBirth: newUser.dayOfBirth,
+                role: newUser.role,
+                departmentID: newUser.departmentID
+            }
+        });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
     }
-
-    const user = await authService.login(req.session.user.userName, oldPassword);
-    if (!user) {
-        return res.status(401).json({ message: 'Mật khẩu cũ không đúng' });
-    }
-
-    await authService.changePassword(userId, newPassword);
-    res.status(200).json({ message: 'Đổi mật khẩu thành công' });
 };
