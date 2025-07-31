@@ -1,6 +1,7 @@
 // 1. Import các module cần thiết
 require('dotenv').config();
 const express = require('express');
+const session = require('express-session');
 const cors = require('cors');
 const path = require('path');
 
@@ -27,12 +28,18 @@ app.use(
 
 // Middlewares để phân tích JSON request body
 app.use(express.json());
+app.use(session({
+    secret: config.SESSION_SECRET || 'mysecret',
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false }
+}));
 
 // Server uploads folder
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
-// app.use('/api/auth', authRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/documents', documentRoutes);
 
 // app.use(errorHandler);
