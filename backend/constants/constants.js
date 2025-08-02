@@ -9,25 +9,31 @@ module.exports = {
         PHO_TRUONG_PHONG: "pho_truong_phong",
         CAN_BO: "can_bo",
         VAN_THU: "van_thu",
+        TRUONG_PHONG_SO_LOAI: "truong_phong_so_loai"
     },
-    STATUS: {
-        DTAFT: "draft",
-        PROCESSING: "processing",
-        COMPLETED: "completed",
-        CANCELED: "canceled"
+    GENDER: {
+        MALE: "Nam",
+        FEMALE: "Nữ",
+        OTHER: "Khác"
+    },
+    DOCUMENT_STATUS: {
+        DRAFT: "Draft",
+        PROCESSING: "Processing",
+        COMPLETED: "Completed",
+        CANCELED: "Canceled"
     },
     RECEIVING_METHOD: {
         ONLINE: "Online",
         OFFLINE: "Offline"
     },
     URGENCY_LEVEL: {
-        NORMAL: "Thuong",
-        URGENT: "Khan",
-        SERIOUS: "HoatToc"
+        NORMAL: "Thường",
+        URGENT: "Khẩn",
+        EMERGENCY: "Hoả tốc"
     },
     CONFIDENTIALITY_LEVEL: {
-        NORMAL: "BinhThuong",
-        CONFIDENTIAL: "Mat",
-        SECRET: "ToiMat"
+        NORMAL: "Bình thường",
+        CONFIDENTIAL: "Mật",
+        SECRET: "Tối mật"
     }
 };

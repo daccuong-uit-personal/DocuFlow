@@ -19,7 +19,6 @@ const permissionSchema = new Schema({
     }
 });
 
-// Tạo index cho trường 'name' để tối ưu hóa truy vấn tìm kiếm quyền theo tên
 permissionSchema.index({ name: 1 });
 
 module.exports = mongoose.model('Permission', permissionSchema);

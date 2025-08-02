@@ -1,5 +1,6 @@
 // Schema và Model cho người dùng
 const mongoose = require('mongoose');
+const constants = require('../constants/constants');
 const Schema = mongoose.Schema;
 
 const UserSchema = new Schema({
@@ -20,7 +21,7 @@ const UserSchema = new Schema({
     },
     gender: {
         type: String,
-        enum: ['Male', 'Female', 'Other']
+        enum: [constants.GENDER.MALE, constants.GENDER.FEMALE, constants.GENDER.OTHER],
     },
     phoneNumber: {
         type: String,
@@ -46,12 +47,12 @@ const UserSchema = new Schema({
         default: Date.now
     },
     departmentID: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: 'Department',
         require: true
     },
     role: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: 'Role',
         require: true
     },

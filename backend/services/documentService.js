@@ -3,11 +3,12 @@
 const mongoose = require("mongoose");
 const Document = require("../models/Document");
 
-exports.createDocument = async (documentData) => {
+exports.createDocument = async (documentData, userId) => {
     try {
         const document = new Document({
             ...documentData,
             status: 'Draft',
+            createBy: userId
         });
 
         await document.save();
@@ -152,4 +153,64 @@ exports.searchAndFilterDocuments = async (queryOptions) => {
     }
 };
 
+exports.delegateDocument = async (documentId, assignerId, assigneeId, note) => {
+    try {
+        const document = await Document.findById(documentId);
 
+        if (!document) {
+            throw new Error('Không tìm thấy văn bản.');
+        }
+
+        if (document.currentProcessor.toString() !== assignerId.toString()) {
+            throw new Error('Bạn không có quyền chuyển văn bản này.');
+        }
+
+        const newHistoryEntry = {
+            assignerId: assignerId,
+            assigneeId: assigneeId,
+            action: 'delegate',
+            note: note,
+        };
+
+        document.currentProcessor = assigneeId;
+        document.processingHistory.push(newHistoryEntry);
+        document.status = 'in-progress';
+
+        await document.save();
+        return document;
+    } catch (error) {
+        console.error("Lỗi khi chuyển xử lý văn bản:", error);
+        throw error;
+    }
+};
+
+exports.addProcessor = async (documentId, assignerId, newProcessorId, note) => {
+    try {
+        const document = await Document.findById(documentId);
+
+        if (!document) {
+            throw new Error('Không tìm thấy văn bản.');
+        }
+
+        // Kiểm tra xem người giao việc có phải là người xử lý hiện tại không.
+        if (document.currentProcessor.toString() !== assignerId.toString()) {
+            throw new Error('Bạn không có quyền thêm người xử lý cho văn bản này.');
+        }
+
+        // Tạo một đối tượng lịch sử mới
+        const newHistoryEntry = {
+            assignerId: assignerId,
+            assigneeId: newProcessorId,
+            action: 'addProcessor',
+            note: note,
+        };
+
+        document.processingHistory.push(newHistoryEntry);
+
+        await document.save();
+        return document;
+    } catch (error) {
+        console.error("Lỗi khi thêm người xử lý:", error);
+        throw error;
+    }
+};
