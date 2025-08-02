@@ -1,4 +1,4 @@
-    // Schema và Model cho vai trò
+// Schema và Model cho vai trò
 
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;

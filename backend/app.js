@@ -15,6 +15,8 @@ const authRoutes = require('./routes/authRoutes');
 const departentsRoutes = require('./routes/departmentRoutes');
 const userRoutes = require('./routes/userRoutes');
 const documentRoutes = require('./routes/documentRoutes');
+const permissionRoutes = require('./routes/permissionRoutes');
+const roleRoutes = require('./routes/roleRoutes');
 
 // 2. Khởi tạo ứng dụng Express
 const app = express();
@@ -52,6 +54,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/departments', departentsRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/documents', documentRoutes);
+app.use('/api/permissions', permissionRoutes);
+app.use('/api/roles', roleRoutes);
 
 // app.use(errorHandler);
 
