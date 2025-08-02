@@ -35,5 +35,12 @@ module.exports = {
         NORMAL: "Bình thường",
         CONFIDENTIAL: "Mật",
         SECRET: "Tối mật"
+    },
+    ACTIONS: {
+        DELEGATE: "delegate",
+        ADD_PROCESSOR: "addProcessor",
+        MARK_AS_COMPLETE: "markAsComplete",
+        RECALL: "recall",
+        UPDATE_PROCESSOR: 'updateProcessor'
     }
 };
