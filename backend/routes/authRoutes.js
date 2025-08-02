@@ -2,13 +2,13 @@
 
 const express = require('express');
 const { login, logout, registerUser, changePassword } = require('../controllers/authController');
-const isAuthenticated = require('../middlewares/authMiddleware');
+const { authenticateToken, authorizePermissions } = require('../middlewares/authMiddleware');
 
 const router = express.Router();
 
 router.route('/login').post(login);
-router.route('/register').post(registerUser);
-router.route('/logout').post(logout);
-router.route('/change-password').put(isAuthenticated, changePassword);
+router.route('/register').post(authenticateToken, authorizePermissions(['user:create']), registerUser);
+router.route('/logout').post(authenticateToken, logout);
+router.route('/change-password').put(authenticateToken, changePassword);
 
 module.exports = router;

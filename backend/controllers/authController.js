@@ -7,36 +7,28 @@ const authService = require('../services/authService');
 exports.login = async (req, res) => {
     try {
         const { userName, password } = req.body;
-        const user = await login(userName, password);
+        const {user, token} = await authService.login(userName, password);
 
-        req.session.user = {
-            id: user._id,
-            userName: user.userName,
-            name: user.name,
-            role: user.role
-        };
-
-        res.status(200).json({ message: 'Đăng nhập thành công', user: req.session.user });
+        res.status(200).json({ 
+            message: 'Đăng nhập thành công',
+            content: user, token
+        });
     } catch (error) {
         res.status(400).json({ message: error.message });
     }
 };
 
 exports.logout = (req, res) => {
-    req.session.destroy(err => {
-        if (err) {
-            return res.status(500).json({ message: 'Lỗi khi đăng xuất' });
-        }
-        res.status(200).json({ message: 'Đăng xuất thành công' });
-    });
+    // Logic đăng xuất sẽ được xử lý ở client bằng cách xóa token
+    res.status(200).json({ message: 'Đăng xuất thành công' });
 };
 
 exports.changePassword = async (req, res) => {
     try {
         const { oldPassword, newPassword } = req.body;
-        const userId = req.session.user.id;
+        const userId = req.user.id;
 
-        await changePassword(userId, oldPassword, newPassword);
+        await authService.changePassword(userId, oldPassword, newPassword);
         res.status(200).json({ message: 'Đổi mật khẩu thành công' });
     } catch (error) {
         res.status(400).json({ message: error.message });

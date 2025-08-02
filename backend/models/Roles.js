@@ -16,15 +16,14 @@ const roleSchema = new Schema({
         minlength: 3,
         maxlength: 50
     },
-    performance: [
+    permissions: [
         {
             type: Schema.Types.ObjectId,
-            ref: 'Permission'  // Tham chiếu đến model 'Permission'
+            ref: 'Permission'
         }
     ]
 });
 
-// Tạo index cho trường 'name' để tối ưu hóa truy vấn tìm kiếm vai trò theo tên
 roleSchema.index({ name: 1 });
 
 module.exports = mongoose.model('Role', roleSchema);

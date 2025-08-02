@@ -1,11 +1,21 @@
 // Logic nghiệp vụ cho xác thực
 
+const { JWT_SECRET } = require('../config/config');
 const User = require('../models/User');
 const { hashPassword, comparePassword } = require('../utils/hashPassword');
+const jwt = require('jsonwebtoken');
+
 
 exports.login = async (userName, password) => {
     try {
-        const user = await User.findOne({ userName }).select('+password');
+        const user = await User.findOne({ userName }).select('+password').populate({
+            path: 'role',
+            populate: {
+                path: 'permissions',
+                model: 'Permission'
+            }
+        });
+
         if (!user) {
             throw new Error('Tên đăng nhập hoặc mật khẩu không đúng.');
         }
@@ -15,8 +25,21 @@ exports.login = async (userName, password) => {
             throw new Error('Tên đăng nhập hoặc mật khẩu không đúng.');
         }
 
+        const permissions = user.role.permissions.map(perm => perm.name);
+
+        const payload = {
+            id: user._id,
+            username: user.userName,
+            roleId: user.role.id,
+            roleName: user.role.name,
+            roleDescription: user.role.description,
+            permissions: permissions
+        };
+
+        const token = jwt.sign(payload, JWT_SECRET , { expiresIn: '1h' });
+
         user.password = undefined;
-        return user;
+        return {user, token};
     } catch (error) {
         console.error("Lỗi khi đăng nhập:", error.message);
         throw new Error(error.message);

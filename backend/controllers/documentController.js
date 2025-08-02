@@ -4,7 +4,8 @@ const DocumentService = require("../services/documentService");
 
 exports.createDocument = async (req, res) => {
     try {
-        const document = await DocumentService.createDocument(req.body);
+        const userId = req.user.id;
+        const document = await DocumentService.createDocument(req.body, userId);
         return res.status(201).json({ document });
     } catch (error) {
         return res.status(500).json({ error: error.message });
@@ -63,3 +64,31 @@ exports.deleteDocument = async (req, res) => {
         return res.status(500).json({ error: error.message });
     }
 }
+
+// Chuyển xử lý văn bản cho người khác
+exports.delegateDocument = async (req, res) => {
+    try {
+        const { documentId } = req.params;
+        const { assigneeId, note } = req.body;
+        const assignerId = req.user.id; // Lấy ID của người giao việc từ token đã xác thực
+
+        const updatedDocument = await documentService.delegateDocument(documentId, assignerId, assigneeId, note);
+        return res.status(200).json({ document: updatedDocument });
+    } catch (error) {
+        return res.status(400).json({ message: error.message });
+    }
+};
+
+// Thêm người xử lý mới vào văn bản
+exports.addProcessor = async (req, res) => {
+    try {
+        const { documentId } = req.params;
+        const { newProcessorId, note } = req.body;
+        const assignerId = req.user.id; // Lấy ID của người giao việc từ token đã xác thực
+
+        const updatedDocument = await documentService.addProcessor(documentId, assignerId, newProcessorId, note);
+        return res.status(200).json({ document: updatedDocument });
+    } catch (error) {
+        return res.status(400).json({ message: error.message });
+    }
+};
