@@ -68,11 +68,12 @@ exports.deleteDocument = async (req, res) => {
 // Chuyển xử lý văn bản cho người khác
 exports.delegateDocument = async (req, res) => {
     try {
-        const { documentId } = req.params;
-        const { assigneeId, note } = req.body;
-        const assignerId = req.user.id; // Lấy ID của người giao việc từ token đã xác thực
+        const documentId = req.params.id; 
+        const assigneeId = req.body.assigneeId;
+        const note = req.body.note;
+        const assignerId = req.user.id;
 
-        const updatedDocument = await documentService.delegateDocument(documentId, assignerId, assigneeId, note);
+        const updatedDocument = await DocumentService.delegateDocument(documentId, assignerId, assigneeId, note);
         return res.status(200).json({ document: updatedDocument });
     } catch (error) {
         return res.status(400).json({ message: error.message });
@@ -82,11 +83,54 @@ exports.delegateDocument = async (req, res) => {
 // Thêm người xử lý mới vào văn bản
 exports.addProcessor = async (req, res) => {
     try {
-        const { documentId } = req.params;
-        const { newProcessorId, note } = req.body;
-        const assignerId = req.user.id; // Lấy ID của người giao việc từ token đã xác thực
+        const documentId = req.params.id;
+        const newProcessorId = req.body.newProcessorId;
+        const note = req.body.note;
+        const assignerId = req.user.id;
 
-        const updatedDocument = await documentService.addProcessor(documentId, assignerId, newProcessorId, note);
+        const updatedDocument = await DocumentService.addProcessor(documentId, assignerId, newProcessorId, note);
+        return res.status(200).json({ document: updatedDocument });
+    } catch (error) {
+        return res.status(400).json({ message: error.message });
+    }
+};
+
+// Đánh dấu văn bản đã hoàn thành
+exports.markAsComplete = async (req, res) => {
+    try {
+        const documentId = req.params.id;
+        const processorId = req.user.id;
+
+        const updatedDocument = await DocumentService.markAsComplete(documentId, processorId);
+        return res.status(200).json({ document: updatedDocument });
+    } catch (error) {
+        return res.status(400).json({ message: error.message });
+    }
+};
+
+// Thu hồi văn bản
+exports.recallDocument = async (req, res) => {
+    try {
+        const documentId = req.params.id;
+        const requesterId = req.user.id;
+        const requesterRoleName = req.user.roleName;
+        
+        const updatedDocument = await DocumentService.recallDocument(documentId, requesterId, requesterRoleName);
+        return res.status(200).json({ document: updatedDocument });
+    } catch (error) {
+        return res.status(400).json({ message: error.message });
+    }
+};
+
+exports.updateProcessor = async (req, res) => {
+    try {
+        const documentId = req.params.id;
+        const newAssigneeId = req.body.newAssigneeId;
+        const note = req.body.note;
+        const deadline = req.body.deadline;
+        const assignerId = req.user.id;
+
+        const updatedDocument = await DocumentService.updateProcessor(documentId, assignerId, newAssigneeId, note, deadline);
         return res.status(200).json({ document: updatedDocument });
     } catch (error) {
         return res.status(400).json({ message: error.message });

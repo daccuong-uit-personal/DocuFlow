@@ -5,18 +5,20 @@ const Schema = mongoose.Schema;
 
 const processingHistorySchema = new mongoose.Schema({
     assignerId: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: 'User',
         required: true,
     },
-    assigneeId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true,
-    },
+    assigneeId:[
+        {
+            type: Schema.Types.ObjectId,
+            ref: 'User',
+            required: true,
+        }
+    ],
     action: {
         type: String,
-        enum: ['delegate', 'addProcessor', 'markAsComplete'],
+        enum: [constants.ACTIONS.DELEGATE, constants.ACTIONS.ADD_PROCESSOR, constants.ACTIONS.MARK_AS_COMPLETE, constants.ACTIONS.RECALL, constants.ACTIONS.UPDATE_PROCESSOR],
         required: true,
     },
     assignedAt: {
@@ -27,6 +29,10 @@ const processingHistorySchema = new mongoose.Schema({
         type: String,
         required: false,
     },
+    deadline: {
+        type: Date,
+        required: true,
+    }
 });
 
 const documentSchema = new Schema({
@@ -107,10 +113,12 @@ const documentSchema = new Schema({
         ref: 'User',
         required: true
     },
-    currentProcessor: {
-        type: Schema.Types.ObjectId,
-        ref: 'User',
-    },
+    assignedUsers: [
+        {
+            type: Schema.Types.ObjectId,
+            ref: 'User',
+        }
+    ],
     processingHistory: [processingHistorySchema],
 });
 
