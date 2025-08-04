@@ -147,7 +147,6 @@ exports.searchAndFilterDocuments = async (queryOptions) => {
             }
         }
 
-        // Thực hiện truy vấn MongoDB với tất cả các điều kiện đã xây dựng
         const documents = await Document.find(query);
         return documents;
     } catch (error) {
@@ -156,7 +155,7 @@ exports.searchAndFilterDocuments = async (queryOptions) => {
     }
 };
 
-exports.delegateDocument = async (documentId, assignerId, assigneeId, note, deadline) => {
+exports.delegateDocument = async (documentId, assignerId, assigneeId, note, deadline, assignerRoleName) => {
     try {
         const document = await Document.findById(documentId);
 
@@ -168,23 +167,19 @@ exports.delegateDocument = async (documentId, assignerId, assigneeId, note, dead
             throw new Error('Bạn không có quyền chuyển xử lý văn bản này.');
         }
 
-        // --- LOGIC MỚI: KIỂM TRA LUỒNG XỬ LÝ ---
-        // Lấy thông tin người dùng và vai trò của họ
-        const assignerUser = await User.findById(assignerId).populate('role');
+        // Lấy role của assignee ra check
         const assigneeUser = await User.findById(assigneeId).populate('role');
         
-        if (!assignerUser || !assigneeUser) {
+        if (!assigneeUser) {
             throw new Error('Không tìm thấy thông tin người dùng.');
         }
         
-        const assignerRoleName = assignerUser.role.name;
         const assigneeRoleName = assigneeUser.role.name;
 
         // Kiểm tra luồng xử lý
         if (!canDelegate(assignerRoleName, assigneeRoleName)) {
-            throw new Error(`Bạn không được phép chuyển văn bản cho người có vai trò "${assigneeRoleName}" theo luồng xử lý.`);
+            throw new Error(`"${assignerRoleName}" không được phép chuyển văn bản cho người có vai trò "${assigneeRoleName}" theo luồng xử lý.`);
         }
-        // --- KẾT THÚC LOGIC MỚI ---
 
         const newHistoryEntry = {
             assignerId: assignerId,
@@ -194,7 +189,6 @@ exports.delegateDocument = async (documentId, assignerId, assigneeId, note, dead
             deadline: deadline,
         };
 
-        document.assignedUsers = document.assignedUsers.filter(id => id.toString() !== assignerId.toString());
         document.assignedUsers.push(assigneeId);
 
         document.processingHistory.push(newHistoryEntry);

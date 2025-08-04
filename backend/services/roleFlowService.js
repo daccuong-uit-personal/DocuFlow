@@ -1,4 +1,4 @@
-const roleHierarchy = require('../config/roleFlow');
+const { roleHierarchy } = require('../config/roleFlow');
 
 exports.canDelegate = (assignerRole, assigneeRole) => {
     const allowedRoles = roleHierarchy[assignerRole];
