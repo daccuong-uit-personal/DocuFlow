@@ -45,16 +45,14 @@ const LoginForm = () => {
       }
       
       setIsLoading(false);
-      toast.success('Đăng nhập thành công!');
 
       // Chuyển hướng sau khi đăng nhập thành công
       setTimeout(() => {
-        navigate('/documents'); // Điều hướng đến trang dashboard
+        navigate('/documents');
       }, 1000);
     } catch (err) {
       // Xử lý lỗi từ backend
       setError('Tên đăng nhập hoặc mật khẩu không đúng!');
-      toast.error('Đăng nhập thất bại. Vui lòng kiểm tra lại!');
       setIsLoading(false);
     }
   };
@@ -69,14 +67,12 @@ const LoginForm = () => {
             transition: { staggerChildren: 0.2 },
           },
         }}
-        className="space-y-6"
+        className="space-y-4"
       >
-        {/* Hiển thị thông báo lỗi */}
-        {error && <p className="text-red-500 text-sm font-medium">{error}</p>}
 
         {/* Trường Tên đăng nhập */}
         <motion.div variants={itemVariants}>
-          <label htmlFor="userName" className="block text-sm font-medium text-gray-700 mb-2">Tên đăng nhập</label>
+          <label htmlFor="userName" className="block text-xs font-medium text-gray-800 mb-2">Tên đăng nhập</label>
           <div className="relative rounded-lg shadow-sm">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <User size={20} className="text-gray-400" />
@@ -88,7 +84,7 @@ const LoginForm = () => {
               value={userName}
               onChange={(e) => setUserName(e.target.value)}
               required
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+              className="w-full pl-10 pr-4 py-2 border border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-colors duration-200 text-xs"
               placeholder="Tên đăng nhập"
             />
           </div>
@@ -96,7 +92,7 @@ const LoginForm = () => {
 
         {/* Trường Mật khẩu */}
         <motion.div variants={itemVariants}>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">Mật khẩu</label>
+          <label htmlFor="password" className="block text-xs font-medium text-gray-800 mb-2">Mật khẩu</label>
           <div className="relative rounded-lg shadow-sm">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Lock size={20} className="text-gray-400" />
@@ -108,7 +104,7 @@ const LoginForm = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+              className="w-full pl-10 pr-4 py-2 border border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-colors duration-200 text-xs"
               placeholder="Mật khẩu của bạn"
             />
             <button
@@ -121,17 +117,24 @@ const LoginForm = () => {
           </div>
         </motion.div>
 
-        {/* Checkbox "Lưu mật khẩu" */}
+        {/* Checkbox "Lưu mật khẩu"
         <motion.div variants={itemVariants} className="flex items-center">
           <input
             type="checkbox"
             id="rememberMe"
             checked={rememberMe}
             onChange={() => setRememberMe(!rememberMe)}
-            className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            className="mr-2 h-4 w-4 text-sky-600 focus:ring-sky-500 border-gray-400 rounded "
           />
-          <label htmlFor="rememberMe" className="text-sm text-gray-600">Lưu mật khẩu</label>
-        </motion.div>
+          <label htmlFor="rememberMe" className="text-xs text-gray-700">Lưu mật khẩu</label>
+        </motion.div> */}
+        
+        {/* Hiển thị thông báo lỗi */}
+        {error ? (
+          <p className="text-red-500 text-xs font-medium">{error}</p>
+        ) : (
+          <p className="text-red-500 text-xs font-medium opacity-0">h</p>
+        )}
 
         {/* Nút Đăng nhập */}
         <motion.button
@@ -140,7 +143,7 @@ const LoginForm = () => {
           variants={itemVariants}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className={`w-full flex justify-center items-center py-3 px-4 rounded-lg font-semibold text-white transition-colors duration-200 ${isLoading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 shadow-lg'}`}
+          className={`w-full flex justify-center items-center py-2 px-4 rounded-lg font-semibold text-white transition-colors duration-200 ${isLoading ? 'bg-gradient-to-tl from-sky-300 from-30% to-sky-500 cursor-not-allowed' : 'bg-gradient-to-tl from-sky-400 from-30% to-sky-600 hover:bg-sky-600 shadow-lg'}`}
         >
           {isLoading ? (
             <span className="flex items-center">

@@ -19,8 +19,9 @@ import DocumentListPage from "./pages/Document/DocumentListPage";
 
 // import Profile from "./pages/ProfilePage";
 // import NotFoundPage from "./pages/NotFoundPage";
-import ProtectedRoute from "./routes/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
+import MainLayout from "./components/MainLayout";
+import DynamicRouter from "./routes/DynamicRouter";
 
 const App = () => {
   return (
@@ -28,29 +29,8 @@ const App = () => {
       <AuthProvider>
         <Router>
           <Routes>
-            {/*Public Routes */}
             <Route path="/login" element={<LoginPage/>} />
-            
-            {/*Protect Routes */}
-              {/* User Management Routes */}
-              {/* <Route path="/users" element={<UserListPage/>} />
-              <Route path="/users/create" element={<UserCreatePage/>} />
-              <Route path="/users/:id" element={<UserDetailPage/>} /> */}
-
-              {/* Document Management Routes */}
-              <Route element={<ProtectedRoute children ="document:read" />}>
-                <Route path="/documents" element={<DocumentListPage/>} />
-                {/* <Route path="/documents/create" element={<DocumentCreatePage/>} />
-                <Route path="/documents/:id" element={<DocumentDetailPage/>} />
-                <Route path="/documents/:id/process" element={<DocumentProcessPage/>} /> */}
-              </Route>
-
-              {/* Profile Page */}
-              {/* <Route path="/profile" element={<Profile/>} />   */}
-
-              {/* Catch All Route for authenticated users */}
-              {/* <Route path="*" element={<NotFoundPage />} /> */}
-              {/* <Route path="*" element={<Navigate to="/login" replace />}/> */}
+            <Route path="*" element={<MainLayout><DynamicRouter /></MainLayout>} />
           </Routes>
         </Router>
       </AuthProvider>

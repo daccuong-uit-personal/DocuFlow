@@ -1,6 +1,7 @@
 // src/contexts/AuthContext.jsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import authService from '../services/authService';
+import toast from 'react-hot-toast';
 
 export const AuthContext = createContext(null);
 
@@ -11,9 +12,6 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      // Logic để kiểm tra token có hợp lệ không (nếu cần)
-      // Ví dụ: gọi API profile để lấy thông tin user
-      // Giả sử token hợp lệ, ta sẽ set user tạm thời
       setUser({ token }); 
     }
     setLoading(false);

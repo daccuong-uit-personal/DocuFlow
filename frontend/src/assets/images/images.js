@@ -1,5 +1,5 @@
-import theme from './1.jpg'
+import image02 from './image02.png'
 
 export const images = {
-    theme
+    image02
 }
