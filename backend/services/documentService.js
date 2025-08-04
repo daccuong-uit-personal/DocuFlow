@@ -2,7 +2,9 @@
 
 const mongoose = require("mongoose");
 const Document = require("../models/Document");
+const User = require("../models/User");
 const constants = require("../constants/constants");
+const { canDelegate } = require("./roleFlowService");
 
 exports.createDocument = async (documentData, userId) => {
     try {
@@ -154,7 +156,7 @@ exports.searchAndFilterDocuments = async (queryOptions) => {
     }
 };
 
-exports.delegateDocument = async (documentId, assignerId, assigneeId, note) => {
+exports.delegateDocument = async (documentId, assignerId, assigneeId, note, deadline) => {
     try {
         const document = await Document.findById(documentId);
 
@@ -166,12 +168,30 @@ exports.delegateDocument = async (documentId, assignerId, assigneeId, note) => {
             throw new Error('Bạn không có quyền chuyển xử lý văn bản này.');
         }
 
+        // --- LOGIC MỚI: KIỂM TRA LUỒNG XỬ LÝ ---
+        // Lấy thông tin người dùng và vai trò của họ
+        const assignerUser = await User.findById(assignerId).populate('role');
+        const assigneeUser = await User.findById(assigneeId).populate('role');
+        
+        if (!assignerUser || !assigneeUser) {
+            throw new Error('Không tìm thấy thông tin người dùng.');
+        }
+        
+        const assignerRoleName = assignerUser.role.name;
+        const assigneeRoleName = assigneeUser.role.name;
+
+        // Kiểm tra luồng xử lý
+        if (!canDelegate(assignerRoleName, assigneeRoleName)) {
+            throw new Error(`Bạn không được phép chuyển văn bản cho người có vai trò "${assigneeRoleName}" theo luồng xử lý.`);
+        }
+        // --- KẾT THÚC LOGIC MỚI ---
+
         const newHistoryEntry = {
             assignerId: assignerId,
             assigneeId: assigneeId,
             action: constants.ACTIONS.DELEGATE,
             note: note,
-            deadline: Date.now(),
+            deadline: deadline,
         };
 
         document.assignedUsers = document.assignedUsers.filter(id => id.toString() !== assignerId.toString());
@@ -188,7 +208,7 @@ exports.delegateDocument = async (documentId, assignerId, assigneeId, note) => {
     }
 };
 
-exports.addProcessor = async (documentId, assignerId, newProcessorId, note) => {
+exports.addProcessor = async (documentId, assignerId, newProcessorId, note, deadline) => {
     try {
         const document = await Document.findById(documentId);
 
@@ -209,7 +229,7 @@ exports.addProcessor = async (documentId, assignerId, newProcessorId, note) => {
             assigneeId: newProcessorId,
             action: constants.ACTIONS.ADD_PROCESSOR,
             note: note,
-            deadline: Date.now(),
+            deadline: deadline,
         };
         document.processingHistory.push(newHistoryEntry);
         document.status = constants.DOCUMENT_STATUS.PROCESSING;
