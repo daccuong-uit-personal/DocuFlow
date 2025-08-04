@@ -53,7 +53,7 @@ exports.getUsers = async (queryOptions) => {
 
         return users;
     } catch (error) {
-        console.error("Error searching and filtering users:", error);
+        console.error("Lỗi khi tìm kiếm và lọc người dùng:", error);
         throw error;
     }
 };
@@ -68,7 +68,7 @@ exports.getUserById = async (userId) => {
         }
         return user;
     } catch (error) {
-        console.error("Error fetching user by ID:", error);
+        console.error("Lỗi khi tìm kiếm người dùng theo ID:", error);
         throw error;
     }
 };
@@ -77,7 +77,7 @@ exports.updateUser = async (userId, updatedData) => {
     try {
         const user = await User.findById(userId);
         if (!user) {
-            throw new Error('User not found.');
+            throw new Error('Không tìm thấy người dùng!');
         }
 
         if (updatedData.role) {
@@ -94,7 +94,7 @@ exports.updateUser = async (userId, updatedData) => {
 
         return user;
     } catch (error) {
-        console.error("Error updating user:", error);
+        console.error("Lỗi khi cập nhật người dùng:", error);
         throw error;
     }
 };
@@ -110,16 +110,50 @@ exports.deleteUser = async (userId) => {
         });
 
         if (departments && departments.length > 0) {
-            throw new Error('Cannot delete user. This user is currently a head or vice head of a department.');
+            throw new Error('Không thể xóa người dùng! Người dùng này hiện là trưởng hoặc phó phòng ban!');
         }
 
         const user = await User.findByIdAndDelete(userId);
         if (!user) {
-            throw new Error('User not found.');
+            throw new Error('Không tìm thấy người dùng!');
         }
         return user;
     } catch (error) {
-        console.error("Error deleting user:", error);
+        console.error("Lỗi khi xóa người dùng:", error);
+        throw error;
+    }
+};
+
+exports.transferUser = async (userId, newDepartmentID, requester) => {
+    try {
+        // Kiểm tra người dùng cần chuyển
+        const user = await User.findById(userId);
+        if (!user) throw new Error("Không tìm thấy người dùng cần chuyển.");
+
+        // Kiểm tra phòng ban mới có tồn tại không
+        const department = await Department.findById(newDepartmentID);
+        if (!department) throw new Error("Phòng ban đích không tồn tại.");
+
+        // Kiểm tra xem người dùng có phải trưởng/phó phòng không
+        const isHeadOrVice = await Department.findOne({
+            $or: [
+                { headOfDepartment: userId },
+                { viceHeadOfDepartment: userId }
+            ]
+        });
+
+        if (isHeadOrVice) {
+            throw new Error("Không thể chuyển người dùng vì họ đang là trưởng hoặc phó phòng.");
+        }
+
+        // Cập nhật phòng ban mới
+        user.departmentID = newDepartmentID;
+        user.updateAt = new Date();
+        await user.save();
+
+        return user;
+    } catch (error) {
+        console.error("Error transferring user:", error);
         throw error;
     }
 };
