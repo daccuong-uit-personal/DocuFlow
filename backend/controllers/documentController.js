@@ -71,9 +71,10 @@ exports.delegateDocument = async (req, res) => {
         const documentId = req.params.id; 
         const assigneeId = req.body.assigneeId;
         const note = req.body.note;
+        const deadline = req.body.deadline;
         const assignerId = req.user.id;
 
-        const updatedDocument = await DocumentService.delegateDocument(documentId, assignerId, assigneeId, note);
+        const updatedDocument = await DocumentService.delegateDocument(documentId, assignerId, assigneeId, note, deadline);
         return res.status(200).json({ document: updatedDocument });
     } catch (error) {
         return res.status(400).json({ message: error.message });
@@ -87,8 +88,9 @@ exports.addProcessor = async (req, res) => {
         const newProcessorId = req.body.newProcessorId;
         const note = req.body.note;
         const assignerId = req.user.id;
+        const deadline = req.body.deadline;
 
-        const updatedDocument = await DocumentService.addProcessor(documentId, assignerId, newProcessorId, note);
+        const updatedDocument = await DocumentService.addProcessor(documentId, assignerId, newProcessorId, note, deadline);
         return res.status(200).json({ document: updatedDocument });
     } catch (error) {
         return res.status(400).json({ message: error.message });
