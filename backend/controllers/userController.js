@@ -37,8 +37,22 @@ exports.updateUser = async (req, res) => {
 exports.deleteUser = async (req, res) => {
     try {
         await UserService.deleteUser(req.params.id);
-        return res.status(200).json({ message: "User deleted successfully." });
+        return res.status(200).json({ message: "Xóa người dùng thành công!" });
     } catch (error) {
         return res.status(400).json({ error: error.message });
     }
 }
+
+exports.transferUser = async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const { newDepartmentID } = req.body;
+        const requester = req.user;
+
+        const updatedUser = await UserService.transferUser(userId, newDepartmentID, requester);
+        return res.status(200).json({ message: 'Chuyển phòng ban thành công.', user: updatedUser });
+    } catch (error) {
+        console.error("Lỗi khi chuyển nhân sự:", error);
+        return res.status(400).json({ error: error.message });
+    }
+};
