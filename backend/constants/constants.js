@@ -41,6 +41,7 @@ module.exports = {
         ADD_PROCESSOR: "addProcessor",
         MARK_AS_COMPLETE: "markAsComplete",
         RECALL: "recall",
-        UPDATE_PROCESSOR: 'updateProcessor'
+        UPDATE_PROCESSOR: 'updateProcessor',
+        RETURN: 'return'
     }
 };
