@@ -48,8 +48,8 @@ const Sidebar = () => {
       subItems: [
         { name: 'Document List', icon: <Bars3Icon className="h-3 w-5" />, link: '/documents' },
         { name: 'Create Document', icon: <PlusCircleIcon className="h-3 w-5" />, link: '/documents/create' },
-        { name: 'Document Detail', icon: <EyeIcon className="h-3 w-5" />, link: '/documents/detail' },
-        { name: 'Process Document', icon: <WrenchScrewdriverIcon className="h-3 w-5" />, link: '/documents/process' },
+        // { name: 'Document Detail', icon: <EyeIcon className="h-3 w-5" />, link: '/documents/detail' },
+        // { name: 'Process Document', icon: <WrenchScrewdriverIcon className="h-3 w-5" />, link: '/documents/process' },
       ]
     },
     {
@@ -59,7 +59,7 @@ const Sidebar = () => {
       id: 2,
       subItems: [
         { name: 'User List', icon: <Bars3Icon className="h-3 w-5" />, link: '/users' },
-        { name: 'User Detail', icon: <EyeIcon className="h-3 w-5" />, link: '/users/detail' },
+        // { name: 'User Detail', icon: <EyeIcon className="h-3 w-5" />, link: '/users/detail' },
         { name: 'Create User', icon: <PlusCircleIcon className="h-3 w-5" />, link: '/users/create' },
       ]
     },

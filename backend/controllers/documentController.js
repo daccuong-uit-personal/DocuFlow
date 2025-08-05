@@ -73,9 +73,10 @@ exports.delegateDocument = async (req, res) => {
         const note = req.body.note;
         const deadline = req.body.deadline;
         const assignerId = req.user.id;
+        const action = req.body.action;
         const assignerRoleName = req.user.roleName;
 
-        const updatedDocument = await DocumentService.delegateDocument(documentId, assignerId, assigneeId, note, deadline, assignerRoleName);
+        const updatedDocument = await DocumentService.delegateDocument(documentId, assignerId, assigneeId, note, deadline, assignerRoleName, action);
         return res.status(200).json({ document: updatedDocument });
     } catch (error) {
         return res.status(400).json({ message: error.message });

@@ -155,7 +155,7 @@ exports.searchAndFilterDocuments = async (queryOptions) => {
     }
 };
 
-exports.delegateDocument = async (documentId, assignerId, assigneeId, note, deadline, assignerRoleName) => {
+exports.delegateDocument = async (documentId, assignerId, assigneeId, note, deadline, assignerRoleName, action) => {
     try {
         const document = await Document.findById(documentId);
 
@@ -181,10 +181,18 @@ exports.delegateDocument = async (documentId, assignerId, assigneeId, note, dead
             throw new Error(`"${assignerRoleName}" không được phép chuyển văn bản cho người có vai trò "${assigneeRoleName}" theo luồng xử lý.`);
         }
 
+
+        if (action === constants.ACTIONS.RETURN){
+            document.assignedUsers = document.assignedUsers.filter(User => User !== assignerId);
+            console.log("Danh sách người dùng sau khi xóa người gửi:", document.assignedUsers);
+        }
+
+        const actionTemp = (action === constants.ACTIONS.RETURN) ? constants.ACTIONS.RETURN : constants.ACTIONS.DELEGATE;
+
         const newHistoryEntry = {
             assignerId: assignerId,
             assigneeId: assigneeId,
-            action: constants.ACTIONS.DELEGATE,
+            action: actionTemp,
             note: note,
             deadline: deadline,
         };
