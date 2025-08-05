@@ -63,7 +63,7 @@ const ordersData = [
 
 // Định nghĩa các cột
 const ordersColumns = [
-  { header: 'Orders', key: 'product', sortable: true },
+  { header: 'Số văn bản', key: 'documentNumber', sortable: true },
   { header: 'Customer', key: 'customer', sortable: true },
   { header: 'Price', key: 'price', sortable: true },
   { header: 'Date', key: 'date', sortable: true },
