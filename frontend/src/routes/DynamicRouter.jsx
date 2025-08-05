@@ -1,6 +1,7 @@
 import DocumentListPage from "../pages/Document/DocumentListPage";
 import DocumentCreatePage from "../pages/Document/DocumentCreatePage";
 import DocumentDetailPage from "../pages/Document/DocumentDetailPage";
+import DocumentEditPage from "../pages/Document/DocumentEditPage";
 import DocumentProcessPage from "../pages/Document/DocumentProcessPage";
 import UserListPage from "../pages/Users/UserListPage";
 import UserDetailPage from "../pages/Users/UserDetailPage";
@@ -14,6 +15,7 @@ const DynamicRouter = () => {
       <Route path="/documents" element={<DocumentListPage />} />
       <Route path="/documents/create" element={<DocumentCreatePage />} />
       <Route path="/documents/detail" element={<DocumentDetailPage />} />
+      <Route path="/documents/edit" element={<DocumentEditPage />} />
       <Route path="/documents/process" element={<DocumentProcessPage />} />
       <Route path="/users" element={<UserListPage />} />
       <Route path="/users/detail" element={<UserDetailPage />} />
