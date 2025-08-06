@@ -10,9 +10,15 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      setUser({ token }); 
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+      } catch (error) {
+        console.error("Failed to parse user from localStorage", error);
+        localStorage.removeItem('user');
+      }
     }
     setLoading(false);
   }, []);
@@ -20,9 +26,13 @@ export const AuthProvider = ({ children }) => {
   const login = async (userName, password) => {
     try {
       const response = await authService.login(userName, password);
+      const userData = response.data.content;
       const token = response.data.token;
+
+      localStorage.setItem('user', JSON.stringify(userData));
       localStorage.setItem('token', token);
-      setUser({ token });
+      setUser(userData);
+      console.log('Login successful:', userData);
     } catch (error) {
       console.error('Login failed:', error);
       throw error;
@@ -30,12 +40,13 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setUser(null);
   };
 
   const value = {
     user,
+    isAuthenticated: !!user,
     login,
     logout,
     loading,
@@ -43,7 +54,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {loading ? <div>Đang tải...</div> : children}
     </AuthContext.Provider>
   );
 };

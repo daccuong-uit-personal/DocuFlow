@@ -5,12 +5,21 @@ const DocumentService = require("../services/documentService");
 exports.createDocument = async (req, res) => {
     try {
         const userId = req.user.id;
-        const document = await DocumentService.createDocument(req.body, userId);
-        return res.status(201).json({ document });
+        // Lấy danh sách tên file đã upload
+        const attachments = req.files ? req.files.map(file => file.filename) : [];
+
+        const documentData = {
+            ...req.body,
+            attachments: attachments,
+        };
+
+        const document = await DocumentService.createDocument(documentData, userId);
+        return res.status(201).json({ message: "Tạo văn bản thành công!", document });
     } catch (error) {
-        return res.status(500).json({ error: error.message });
+        console.error("Lỗi trong controller createDocument:", error);
+        return res.status(500).json({ message: error.message });
     }
-}
+};
 
 exports.getDocuments = async (req, res) => {
     try {
@@ -33,7 +42,7 @@ exports.getDocuments = async (req, res) => {
 
         res.status(200).json(documents);
     } catch (error) {
-        console.error("Lỗi trong controller getDocuments:", error); 
+        console.error("Lỗi trong controller getDocuments:", error);
         res.status(500).json({ message: "Lỗi máy chủ khi lấy danh sách văn bản.", error: error.message });
     }
 };
@@ -68,7 +77,7 @@ exports.deleteDocument = async (req, res) => {
 // Chuyển xử lý văn bản cho người khác
 exports.delegateDocument = async (req, res) => {
     try {
-        const documentId = req.params.id; 
+        const documentId = req.params.id;
         const assigneeId = req.body.assigneeId;
         const note = req.body.note;
         const deadline = req.body.deadline;
@@ -118,7 +127,7 @@ exports.recallDocument = async (req, res) => {
         const documentId = req.params.id;
         const requesterId = req.user.id;
         const requesterRoleName = req.user.roleName;
-        
+
         const updatedDocument = await DocumentService.recallDocument(documentId, requesterId, requesterRoleName);
         return res.status(200).json({ document: updatedDocument });
     } catch (error) {

@@ -9,7 +9,7 @@ const processingHistorySchema = new mongoose.Schema({
         ref: 'User',
         required: true,
     },
-    assigneeId:[
+    assigneeId: [
         {
             type: Schema.Types.ObjectId,
             ref: 'User',
@@ -100,14 +100,16 @@ const documentSchema = new Schema({
         required: true,
         trim: true
     },
-    attachments: {
-        type: String,
-    },
+    attachments: [
+        {
+            type: String
+        }
+    ],
     status: {
         type: String,
         enum: [constants.DOCUMENT_STATUS.DRAFT, constants.DOCUMENT_STATUS.PROCESSING, constants.DOCUMENT_STATUS.COMPLETED, constants.DOCUMENT_STATUS.CANCELED],
         default: constants.DOCUMENT_STATUS.DRAFT
-    },  
+    },
     createdBy: {
         type: Schema.Types.ObjectId,
         ref: 'User',
