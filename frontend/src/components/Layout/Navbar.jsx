@@ -4,8 +4,11 @@ import React from "react";
 import { motion } from "framer-motion";
 import { BellIcon, MagnifyingGlassIcon} from "@heroicons/react/24/solid";
 import { images } from "../../assets/images/images";
+import { useAuth } from "../../hooks/useAuth";
 
 const Navbar = () => {
+  const { user } = useAuth();
+
   return (
     <motion.header
       initial={{ y: -100 }}
@@ -32,8 +35,8 @@ const Navbar = () => {
                 className="rounded-md h-8 w-8 object-cover"
             />
             <div className="flex flex-col">
-                <span className="text-sm font-semibold text-gray-800">Nguyễn Đắc Cường</span>
-                <span className="text-xs text-gray-500">Admin</span>
+                <span className="text-sm font-semibold text-gray-800">{user.name}</span>
+                <span className="text-xs text-gray-500">{user.userName}</span>
             </div>
         </div>
       </div>

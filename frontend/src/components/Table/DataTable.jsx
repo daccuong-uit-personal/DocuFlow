@@ -62,24 +62,6 @@ const DataTable = ({ data, columns, onRowView, onRowEdit, onRowDelete }) => {
     return sortConfig.key === name ? sortConfig.direction : undefined;
   };
 
-  // Action handlers
-  const handleView = (item) => {
-    console.log('Xem:', item);
-    navigate(`/documents/detail`);
-    // Add your logic to view the item here
-  };
-
-  const handleEdit = (item) => {
-    console.log('Sửa:', item);
-    navigate(`/documents/edit`);
-    // Add your logic to edit the item here
-  };
-
-  const handleDelete = (item) => {
-    console.log('Xóa:', item);
-    // Add your logic to delete the item here
-  };
-
   // Helper function to get status-specific CSS classes
   const getStatusClasses = (status) => {
     switch (status) {
@@ -177,10 +159,12 @@ const DataTable = ({ data, columns, onRowView, onRowEdit, onRowDelete }) => {
                       </span>
                     ) : (column.key === 'recivedDate' || column.key === 'recordedDate' || column.key === 'dueDate') ? (
                       formatDate(item[column.key])
-                    ) : (
-                      item[column.key]
-                    )}
-                    </div>
+                    ) : (column.key === 'departmentID' || column.key === 'role') ? (
+                          item[column.key]?.name
+                        ) : (
+                            item[column.key]
+                          )}
+                  </div>
                 </td>
               ))}
             </tr>

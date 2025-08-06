@@ -14,9 +14,9 @@ const DynamicRouter = () => {
     <Routes>
       <Route path="/documents" element={<DocumentListPage />} />
       <Route path="/documents/create" element={<DocumentCreatePage />} />
-      <Route path="/documents/detail" element={<DocumentDetailPage />} />
-      <Route path="/documents/edit" element={<DocumentEditPage />} />
-      <Route path="/documents/process" element={<DocumentProcessPage />} />
+      <Route path="/documents/detail/:id" element={<DocumentDetailPage />} />
+      <Route path="/documents/edit:id" element={<DocumentEditPage />} />
+      <Route path="/documents/process:id" element={<DocumentProcessPage />} />
       <Route path="/users" element={<UserListPage />} />
       <Route path="/users/detail" element={<UserDetailPage />} />
       <Route path="/users/create" element={<UserCreatePage />} />

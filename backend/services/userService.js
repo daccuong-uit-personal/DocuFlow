@@ -2,6 +2,7 @@
 
 const User = require('../models/User');
 const Department = require('../models/Department');
+const Role  = require('../models/Roles');
 
 // Xử lý các thao tác với người dùng
 
@@ -11,12 +12,13 @@ exports.getUsers = async (queryOptions) => {
             searchText,
             userName,
             departmentID,
-            role,
             gender,
+            role,
             isLocked,
         } = queryOptions;
 
         let query = {};
+        console.log(queryOptions);
 
         // Lọc theo từ khóa tìm kiếm trên nhiều trường
         if (searchText) {
@@ -33,23 +35,35 @@ exports.getUsers = async (queryOptions) => {
         if (userName) {
             query.userName = new RegExp(userName, 'i');
         }
-        if (departmentID) {
-            query.departmentID = departmentID;
-        }
-        if (role) {
-            query.role = role;
-        }
         if (gender) {
             query.gender = gender;
         }
         if (isLocked) {
-            query.isLocked = isLocked === 'true'; // Chuyển đổi chuỗi thành boolean
+            query.isLocked = isLocked === 'true';
         }
+        if (role) {
+            const foundRole = await Role.findOne({ name: role });
+            if (foundRole) {
+                query.role = foundRole._id;
+            } else {
+                query.role = null; 
+            }
+        }
+        
+        if (departmentID) {
+            const foundDepartment = await Department.findOne({ name: departmentID });
+            if (foundDepartment) {
+                query.departmentID = foundDepartment._id;
+            } else {
+                query.departmentID = null;
+            }
+        }
+        console.log(query);
 
         // Thực hiện truy vấn với populate để lấy thông tin chi tiết
         const users = await User.find(query)
-            .populate('departmentID', 'name')
-            .populate('role', 'name');
+            .populate('departmentID', 'name headOfDepartment viceHeadOfDepartment')
+            .populate('role', 'name description');
 
         return users;
     } catch (error) {
@@ -75,7 +89,7 @@ exports.getUserById = async (userId) => {
 
 exports.updateUser = async (userId, updatedData) => {
     try {
-        const user = await User.findById(userId);
+        const user = await User.findById(userId).populate('role').populate('departmentID');
         if (!user) {
             throw new Error('Không tìm thấy người dùng!');
         }

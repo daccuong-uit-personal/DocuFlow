@@ -16,7 +16,7 @@ const UserCreatePage = () => {
         return;
       }
 
-      const token = user?.token;
+      const token = localStorage.getItem('token');
 
       if (!token) {
         setErrorRoles("Bạn chưa đăng nhập hoặc không có quyền truy cập. Vui lòng đăng nhập.");
