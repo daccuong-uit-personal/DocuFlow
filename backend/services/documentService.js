@@ -11,14 +11,13 @@ exports.createDocument = async (documentData, userId) => {
         const document = new Document({
             ...documentData,
             status: 'Draft',
-            createBy: userId
+            createdBy: userId // Sửa 'createBy' thành 'createdBy' cho khớp với Schema
         });
 
         await document.save();
         console.log("Document saved successfully:", document);
         return document;
-    }
-    catch (error) {
+    } catch (error) {
         console.error("Error creating document:", error);
         throw error;
     }
@@ -169,11 +168,11 @@ exports.delegateDocument = async (documentId, assignerId, assigneeId, note, dead
 
         // Lấy role của assignee ra check
         const assigneeUser = await User.findById(assigneeId).populate('role');
-        
+
         if (!assigneeUser) {
             throw new Error('Không tìm thấy thông tin người dùng.');
         }
-        
+
         const assigneeRoleName = assigneeUser.role.name;
 
         // Kiểm tra luồng xử lý
@@ -182,7 +181,7 @@ exports.delegateDocument = async (documentId, assignerId, assigneeId, note, dead
         }
 
 
-        if (action === constants.ACTIONS.RETURN){
+        if (action === constants.ACTIONS.RETURN) {
             document.assignedUsers = document.assignedUsers.filter(User => User !== assignerId);
             console.log("Danh sách người dùng sau khi xóa người gửi:", document.assignedUsers);
         }
@@ -269,7 +268,7 @@ exports.markAsComplete = async (documentId, processorId) => {
         // Cập nhật trạng thái và thêm vào lịch sử
         document.status = constants.DOCUMENT_STATUS.COMPLETED;
         document.processingHistory.push(newHistoryEntry);
-        
+
         await document.save();
         return document;
     } catch (error) {
@@ -284,13 +283,13 @@ exports.recallDocument = async (documentId, requesterId, requesterRoleName) => {
         if (requesterRoleName === 'can_bo') {
             throw new Error('Bạn không có quyền thu hồi văn bản.');
         }
-        
+
         const document = await Document.findById(documentId);
 
         if (!document) {
             throw new Error('Không tìm thấy văn bản.');
         }
-        
+
         // Tìm hành động 'delegate' gần nhất do người yêu cầu thực hiện.
         const lastDelegateAction = document.processingHistory.reverse().find(
             history => history.assignerId.toString() === requesterId && history.action === constants.ACTIONS.DELEGATE
@@ -299,13 +298,13 @@ exports.recallDocument = async (documentId, requesterId, requesterRoleName) => {
         const lastRecallAction = document.processingHistory.findLast(
             history => history.assignerId.toString() === requesterId && history.action === constants.ACTIONS.RECALL
         );
-        
+
         // Nếu không có hành động chuyển giao nào hoặc hành động thu hồi gần hơn.
         if (!lastDelegateAction || (lastRecallAction && lastRecallAction.assignedAt >= lastDelegateAction.assignedAt)) {
             console.log('Không có hành động chuyển giao nào để thu hồi hoặc văn bản đã được thu hồi rồi. Không thực hiện thay đổi nào.');
             return document;
         }
-        
+
         // Đảo ngược thứ tự mảng lại như cũ.
         document.processingHistory.reverse();
 
@@ -323,7 +322,7 @@ exports.recallDocument = async (documentId, requesterId, requesterRoleName) => {
             id => id.toString() !== lastDelegateAction.assigneeId.toString()
         );
         document.assignedUsers.push(requesterId);
-        
+
         // Thêm vào lịch sử xử lý.
         document.processingHistory.push(newHistoryEntry);
         document.status = constants.DOCUMENT_STATUS.PROCESSING;
@@ -339,7 +338,7 @@ exports.recallDocument = async (documentId, requesterId, requesterRoleName) => {
 exports.updateProcessor = async (documentId, assignerId, newAssigneeId, note, deadline) => {
     try {
         const document = await Document.findById(documentId);
-        
+
         if (!document) {
             throw new Error('Không tìm thấy văn bản.');
         }
@@ -360,7 +359,7 @@ exports.updateProcessor = async (documentId, assignerId, newAssigneeId, note, de
 
         // Thêm vào lịch sử xử lý
         document.processingHistory.push(newHistoryEntry);
-        
+
         await document.save();
         return document;
     } catch (error) {

@@ -34,7 +34,8 @@ export const AuthProvider = ({ children }) => {
 
       localStorage.setItem('user', JSON.stringify(userData));
       localStorage.setItem('token', token);
-      // toast.success('Đăng nhập thành công');
+      //toast.success('Đăng nhập thành công');
+
       setUser(userData);
       console.log('Login successful:', userData);
     } catch (error) {

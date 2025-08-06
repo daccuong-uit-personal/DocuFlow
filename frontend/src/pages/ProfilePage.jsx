@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
+
 import { PencilIcon, CheckIcon, XMarkIcon, KeyIcon } from '@heroicons/react/24/outline';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../hooks/useAuth';
+
+// Import modal đổi mật khẩu
+import ChangePasswordForm from '../components/User/ChangePasswordForm';
 
 const ProfilePage = () => {
   const { user, updateUser } = useAuth();
@@ -20,7 +24,10 @@ const ProfilePage = () => {
     address: '',
   });
 
-  // Đồng bộ state cục bộ với dữ liệu từ AuthContext
+  const [isEditing, setIsEditing] = useState(false);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+
+  
   useEffect(() => {
     if (user) {
       setUserInfo({
@@ -93,16 +100,30 @@ const ProfilePage = () => {
     setIsEditing(false);
   };
 
+  // Hàm mở modal đổi mật khẩu
   const handleChangePassword = () => {
-    console.log('Chuyển đến trang đổi mật khẩu');
+    setShowChangePasswordModal(true);
+  };
+
+  // Hàm đóng modal đổi mật khẩu
+  const handleCloseChangePasswordModal = () => {
+    setShowChangePasswordModal(false);
+    // Có thể thêm logic thông báo hoặc tải lại dữ liệu sau khi đóng modal
+  };
+
+  // Hàm xử lý khi đổi mật khẩu thành công (từ modal)
+  const handleConfirmPasswordChange = () => {
+    console.log('Mật khẩu đã được đổi thành công!');
+    setShowChangePasswordModal(false); // Đóng modal sau khi đổi thành công
+    // Có thể thêm thông báo thành công cho người dùng
   };
 
   return (
-    <div className="bg-gray-100 min-h-full font-sans">
-        <h1 className="text-lg font-semibold mb-2 text-gray-800">Thông tin tài khoản</h1>
-      
+    <div className="bg-gray-100 min-h-full font-sans p-6">
+      <h1 className="text-2xl font-semibold mb-6 text-gray-800">Thông tin tài khoản</h1>
+
       {/* Profile Information Section */}
-      <div className="bg-white p-4 rounded-xl shadow-md">
+      <div className="bg-white p-6 rounded-xl shadow-md">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Ảnh đại diện */}
           <div className="md:col-span-1 lg:col-span-1 flex flex-col items-center">
@@ -274,7 +295,7 @@ const ProfilePage = () => {
           ) : (
             <>
               <button
-                onClick={handleChangePassword}
+                onClick={handleChangePassword} // Gọi hàm mở modal
                 type="button"
                 className="flex items-center px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 transition duration-150 ease-in-out"
               >
@@ -293,6 +314,13 @@ const ProfilePage = () => {
           )}
         </div>
       </div>
+
+      {/* Modal đổi mật khẩu */}
+      <ChangePasswordForm
+        isOpen={showChangePasswordModal}
+        onClose={handleCloseChangePasswordModal}
+        onConfirm={handleConfirmPasswordChange}
+      />
     </div>
   );
 };
