@@ -8,18 +8,10 @@ import { Toaster } from 'react-hot-toast';
 
 import LoginPage from "./pages/Auth/LoginPage";
 
-// import UserCreatePage from "./pages/Users/UserCreatePage";
-// import UserDetailPage from "./pages/Users/UserDetailPage";
-// import UserListPage from "./pages/Users/UserListPage";
-
-import DocumentListPage from "./pages/Document/DocumentListPage";
-// import DocumentDetailPage from "./pages/Document/DocumentDetailPage";
-// import DocumentCreatePage from "./pages/Document/DocumentCreatePage";
-// import DocumentProcessPage from "./pages/Document/DocumentProcessPage";
-
-// import Profile from "./pages/ProfilePage";
-// import NotFoundPage from "./pages/NotFoundPage";
 import { AuthProvider } from "./context/AuthContext";
+import { UserProvider } from "./context/UserContext";
+import { DocumentProvider } from "./context/DocumentsContext";
+import ProtectedRoute from "./routes/ProtectedRoute";
 import MainLayout from "./components/MainLayout";
 import DynamicRouter from "./routes/DynamicRouter";
 
@@ -27,12 +19,20 @@ const App = () => {
   return (
     <div>
       <AuthProvider>
-        <Router>
-          <Routes>
-            <Route path="/login" element={<LoginPage/>} />
-            <Route path="*" element={<MainLayout><DynamicRouter /></MainLayout>} />
-          </Routes>
-        </Router>
+        <UserProvider>
+          <DocumentProvider>
+            <Router>
+              <Routes>
+                <Route path="/login" element={<LoginPage/>} />
+                <Route path="/" element={<Navigate to="/login" />} />
+                <Route element={<ProtectedRoute />}>
+                  <Route path="*" element={<MainLayout><DynamicRouter /></MainLayout>} />
+                  </Route>
+              </Routes>
+            </Router>
+          </DocumentProvider>
+        </UserProvider>
+        
       </AuthProvider>
       
       <Toaster

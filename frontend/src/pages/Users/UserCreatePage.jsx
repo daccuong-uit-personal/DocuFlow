@@ -36,7 +36,6 @@ const UserCreatePage = () => {
         return;
       }
 
-      // Lấy token từ localStorage
       const token = localStorage.getItem('token');
 
       if (!token) {

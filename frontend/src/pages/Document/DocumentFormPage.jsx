@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const DocumentFormPage = ({ initialData, isEditMode = false, onSave, onDelegateClick }) => {
-    // Khởi tạo hook useNavigate
     const navigate = useNavigate();
 
     const transferHistory = [
@@ -42,14 +41,25 @@ const DocumentFormPage = ({ initialData, isEditMode = false, onSave, onDelegateC
     
     const [hoveredFile, setHoveredFile] = useState(null);
 
-    const [formData, setFormData] = useState(initialData || {});
+    const [formData, setFormData] = useState(() => {
+        // Kiểm tra nếu initialData tồn tại và có thuộc tính 'document'
+        if (initialData && initialData.document) {
+            return initialData.document; // Trả về đối tượng document bên trong
+        }
+        return initialData || {}; // Nếu không có lớp bọc, trả về initialData hoặc đối tượng rỗng
+    });
     
-    // Đồng bộ state formData với prop initialData
     useEffect(() => {
         if (initialData) {
-            setFormData(initialData);
+            // Kiểm tra lại lớp bọc khi initialData thay đổi
+            if (initialData.document) {
+                setFormData(initialData.document); // Cập nhật với đối tượng document đã bóc tách
+            } else {
+                setFormData(initialData); // Cập nhật với initialData nguyên bản
+            }
         }
     }, [initialData]);
+
 
     const handleRemoveFile = (fileNameToRemove) => {
         if (isEditMode) {
@@ -95,6 +105,8 @@ const DocumentFormPage = ({ initialData, isEditMode = false, onSave, onDelegateC
     const handleGoBack = () => {
         navigate(-1);
     };
+
+    console.log("formData", formData);  
 
     return (
         <div className="bg-gray-100 min-h-full">
@@ -148,46 +160,47 @@ const DocumentFormPage = ({ initialData, isEditMode = false, onSave, onDelegateC
 
             <div className="bg-white rounded-xl shadow-md p-4">
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                    {renderFormField('Số văn bản', 'soVanBan')}
-                    {renderFormField('Sổ văn bản', 'sorVanBan')}
-                    {renderFormField('Đơn vị gửi', 'donViGui')}
-                    {renderFormField('Đơn vị nhận', 'donViNhan')}
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                    {renderFormField('Ngày VB', 'ngayVB', 'date')}
-                    {renderFormField('Ngày nhận VB', 'ngayNhanVB', 'date')}
-                    {renderFormField('Ngày vào sổ', 'ngayVaoSo', 'date')}
-                    {renderFormField('Hạn trả lời', 'hanTraLoi', 'date')}
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4 items-stretch">
+                    {renderFormField('Số văn bản', 'documentNumber')}
+                    {renderFormField('Sổ văn bản', 'documentBook')}
+                    {renderFormField('Đơn vị gửi', 'sendingUnit')}
+                    {renderFormField('Đơn vị nhận', 'recivingUnit')}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                    {renderFormField('Số phụ', 'soPhu')}
-                    {renderFormField('Phương thức nhận', 'phuongThucNhan')}
-                    {renderFormField('Độ mật', 'doMat')}
-                    {renderFormField('Độ khẩn', 'doKhan')}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4 items-stretch">
+                    {renderFormField('Ngày nhận VB', 'recivedDate', 'date')}
+                    {renderFormField('Ngày vào sổ', 'recordedDate', 'date')}
+                    {renderFormField('Hạn trả lời', 'dueDate', 'date')}
+                    {renderFormField('Trạng thái', 'status')}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                    {renderFormField('Loại VB', 'loaiVB')}
-                    {renderFormField('Lĩnh vực', 'linhVuc')}
-                    {renderFormField('Người ký', 'nguoiKy')}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4 items-stretch">
+                    {renderFormField('Phương thức nhận', 'receivingMethod')}
+                    {renderFormField('Độ mật', 'confidentialityLevel')}
+                    {renderFormField('Độ khẩn', 'urgencyLevel')}
+                    {renderFormField('Người tạo', 'createdBy')}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4 items-stretch">
+                    {renderFormField('Loại VB', 'documentType')}
+                    {renderFormField('Lĩnh vực', 'category')}
+                    {renderFormField('Người ký', 'signer')}
+                    {renderFormField('Người được giao', 'assignedUsers')}
                 </div>
                 
                 <div className="mb-6">
                     <label className="block text-sm font-medium text-gray-700 mb-1">Trích yếu</label>
                     {isEditMode ? (
                         <textarea
-                            name="trichYeu"
-                            value={formData.trichYeu || ''}
+                            name="summary"
+                            value={formData.summary || ''}
                             onChange={handleChange}
                             rows="4"
                             className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                         ></textarea>
                     ) : (
                         <div className="mt-1 block w-full p-2 text-gray-800 bg-gray-50 border border-gray-200 rounded-md whitespace-pre-wrap">
-                            {formData.trichYeu || ''}
+                            {formData.summary || ''}
                         </div>
                     )}
                 </div>

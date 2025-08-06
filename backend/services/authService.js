@@ -14,7 +14,7 @@ exports.login = async (userName, password) => {
                 path: 'permissions',
                 model: 'Permission'
             }
-        });
+        }).populate('departmentID');
 
         if (!user) {
             throw new Error('Tên đăng nhập hoặc mật khẩu không đúng.');
@@ -36,7 +36,7 @@ exports.login = async (userName, password) => {
             permissions: permissions
         };
 
-        const token = jwt.sign(payload, JWT_SECRET , { expiresIn: '1h' });
+        const token = jwt.sign(payload, JWT_SECRET , { expiresIn: '10h' });
 
         user.password = undefined;
         return {user, token};
