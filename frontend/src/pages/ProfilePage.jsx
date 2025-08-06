@@ -1,22 +1,45 @@
-import React, { useState } from 'react';
-// Import các icon cần thiết
+import React, { useState, useEffect } from 'react';
 import { PencilIcon, CheckIcon, XMarkIcon, KeyIcon } from '@heroicons/react/24/outline';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
+import { useAuth } from '../hooks/useAuth';
 
 const ProfilePage = () => {
-  // Khởi tạo với dữ liệu mẫu
+  const { user, updateUser } = useAuth();
+  const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // State cục bộ để quản lý dữ liệu trong form
   const [userInfo, setUserInfo] = useState({
-    username: 'nguyendaccuong',
-    fullName: 'Nguyễn Đắc Cường',
-    dateOfBirth: '1990-01-01',
-    role: 'Admin',
-    department: 'Phòng CNTT',
-    gender: 'Nam',
-    phoneNumber: '0123456789',
-    address: 'Số 123, Đường ABC, Quận XYZ, TP.HCM',
+    userName: '',
+    name: '',
+    dayOfBirth: '',
+    role: '',
+    department: '',
+    gender: '',
+    phoneNumber: '',
+    address: '',
   });
 
-  const [isEditing, setIsEditing] = useState(false);
+  // Đồng bộ state cục bộ với dữ liệu từ AuthContext
+  useEffect(() => {
+    if (user) {
+      setUserInfo({
+        userName: user.userName || '',
+        name: user.name || '',
+        dayOfBirth: user.dayOfBirth ? new Date(user.dayOfBirth).toISOString().split('T')[0] : '',
+        role: user.role?.name || '',
+        department: user.departmentID.description || '',
+        gender: user.gender || '',
+        phoneNumber: user.phoneNumber || '',
+        address: user.address || '',
+      });
+    }
+  }, [user]);
+
+  // Hiển thị loading nếu chưa có user
+  if (!user) {
+    return <div>Đang tải thông tin...</div>;
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -24,19 +47,49 @@ const ProfilePage = () => {
       ...prevInfo,
       [name]: value,
     }));
+    console.log(value);
   };
 
   const handleEdit = () => {
     setIsEditing(true);
   };
 
-  const handleConfirm = () => {
-    console.log('Thông tin đã được xác nhận và sẽ được lưu:', userInfo);
-    setIsEditing(false);
+  const handleConfirm = async () => {
+    setLoading(true);
+    try {
+      // Gọi hàm updateUser từ AuthContext để cập nhật thông tin
+      const updatedData = {
+        userName: userInfo.userName,
+        name: userInfo.name,
+        gender: userInfo.gender,
+        phoneNumber: userInfo.phoneNumber,
+        address: userInfo.address,
+        // Không thể cập nhật role, department từ đây
+      };
+      if (userInfo.dayOfBirth) {
+        updatedData.dayOfBirth = new Date(userInfo.dayOfBirth).toISOString();
+      }
+      await updateUser(updatedData);
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Failed to update user:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCancel = () => {
-    console.log('Hủy chỉnh sửa');
+    // Đặt lại state cục bộ về giá trị ban đầu từ AuthContext
+    setUserInfo({
+      userName: user.userName || '',
+      name: user.name || '',
+      dayOfBirth: user.dayOfBirth ? new Date(user.dayOfBirth).toISOString().split('T')[0] : '',
+      role: user.role?.name || '',
+      department: user.departmentID || '',
+      gender: user.gender || '',
+      phoneNumber: user.phoneNumber || '',
+      address: user.address || '',
+    });
     setIsEditing(false);
   };
 
@@ -69,8 +122,8 @@ const ProfilePage = () => {
               <input
                 type="text"
                 id="username"
-                name="username"
-                value={userInfo.username}
+                name="userName"
+                value={userInfo.userName}
                 onChange={handleChange}
                 readOnly={!isEditing}
                 placeholder={isEditing ? "Nhập tên đăng nhập" : ""}
@@ -84,8 +137,8 @@ const ProfilePage = () => {
               <input
                 type="text"
                 id="fullName"
-                name="fullName"
-                value={userInfo.fullName}
+                name="name"
+                value={userInfo.name}
                 onChange={handleChange}
                 readOnly={!isEditing}
                 placeholder={isEditing ? "Nhập tên cán bộ" : ""}
@@ -95,12 +148,12 @@ const ProfilePage = () => {
 
             {/* Ngày sinh */}
             <div>
-              <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700 mb-1">Ngày sinh</label>
+              <label htmlFor="dayOfBirth" className="block text-sm font-medium text-gray-700 mb-1">Ngày sinh</label>
               <input
                 type="date"
-                id="dateOfBirth"
-                name="dateOfBirth"
-                value={userInfo.dateOfBirth}
+                id="dayOfBirth"
+                name="dayOfBirth"
+                value={userInfo.dayOfBirth}
                 onChange={handleChange}
                 readOnly={!isEditing}
                 className={`mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm sm:text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${!isEditing ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}

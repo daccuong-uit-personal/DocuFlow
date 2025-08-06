@@ -1,59 +1,54 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import DocumentFormPage from './DocumentFormPage';
-import DocumentProcessPage from './DocumentProcessPage'
-
-// Giả lập dữ liệu từ API
-const mockDocumentData = {
-    soVanBan: 'VB/2025/001',
-    donViGui: 'Phòng ban A',
-    donViNhan: 'Phòng ban B',
-    ngayVB: '2025-08-05',
-    ngayNhanVB: '2025-08-05',
-    ngayVaoSo: '2025-08-05',
-    hanTraLoi: '2025-08-15',
-    soPhu: '007',
-    phuongThucNhan: 'Email',
-    doMat: 'Tuyệt mật',
-    doKhan: 'Rất khẩn',
-    loaiVB: 'Báo cáo',
-    linhVuc: 'Hành chính',
-    nguoiKy: 'Nguyễn Văn A',
-    trichYeu: 'Báo cáo chi tiết quý 3 năm 2025 về tình hình hoạt động của các phòng ban trong công ty.'
-};
+import DocumentProcessPage from './DocumentProcessPage';
+import { useDocuments } from '../../hooks/useDocuments';
 
 const DocumentDetailPage = () => {
-    // Tạm thời sử dụng dữ liệu giả lập, sau này sẽ dùng state để lưu dữ liệu từ API
-    const [documentData, setDocumentData] = useState(mockDocumentData);
+    const { id } = useParams();
+    const {
+        selectedDocument,
+        loading,
+        error,
+        fetchDocumentById
+    } = useDocuments();
+
     const [isProcessModalOpen, setIsProcessModalOpen] = useState(false);
 
     const handleOpenProcessModal = () => setIsProcessModalOpen(true);
     const handleCloseProcessModal = () => setIsProcessModalOpen(false);
-    
-    // Khi gọi API, bạn sẽ thay đổi đoạn này
-    // useEffect(() => {
-    //   const fetchData = async () => {
-    //     const data = await getDocumentById(id);
-    //     setDocumentData(data);
-    //   }
-    //   fetchData();
-    // }, [id]);
 
-    // Truyền dữ liệu vào component chung và bật chế độ xem (isEditMode={false})
+    useEffect(() => {
+        if (id) {
+            fetchDocumentById(id);
+        }
+    }, [id, fetchDocumentById]);
+
+    if (loading) {
+        return <div className="p-4 text-center text-gray-600">Đang tải chi tiết văn bản...</div>;
+    }
+    if (error) {
+        return <div className="p-4 text-center text-red-600">Lỗi: {error.message || error}</div>;
+    }
+    if (!selectedDocument) {
+        return <div className="p-4 text-center text-gray-600">Không tìm thấy dữ liệu văn bản.</div>;
+    }
+
     return (
-        <div> 
-            <DocumentFormPage 
-                initialData={documentData} 
+        <div>
+            <DocumentFormPage
+                initialData={selectedDocument}
                 isEditMode={false}
-                onDelegateClick={handleOpenProcessModal} 
+                onDelegateClick={handleOpenProcessModal}
             />
 
             <DocumentProcessPage
                 isOpen={isProcessModalOpen}
                 onClose={handleCloseProcessModal}
+                documentId={selectedDocument._id}
             />
         </div>
-       
-    )
+    );
 };
 
 export default DocumentDetailPage;
