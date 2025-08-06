@@ -11,6 +11,7 @@ const ProfilePage = () => {
   const { user, updateUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
 
   // State cục bộ để quản lý dữ liệu trong form
   const [userInfo, setUserInfo] = useState({
@@ -23,9 +24,6 @@ const ProfilePage = () => {
     phoneNumber: '',
     address: '',
   });
-
-  const [isEditing, setIsEditing] = useState(false);
-  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
 
   
   useEffect(() => {
