@@ -1,5 +1,9 @@
+
+// Trang danh sách người dùng
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 import {
   MagnifyingGlassIcon,
@@ -8,11 +12,13 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   XMarkIcon,
-  TrashIcon,
+  ExclamationTriangleIcon,
+  TrashIcon
 } from "@heroicons/react/24/outline";
 
 // Import component DataTable
 import DataTable from "../../components/Table/DataTable";
+import userService from '../../services/userService';
 
 import { useUsers } from '../../hooks/useUsers';
 
@@ -45,6 +51,60 @@ const userColumns = [
   { key: 'action', header: 'Thao tác', sortable: false, widthClass: 'min-w-[120px] text-center', sticky: true },
 ];
 
+// Component Modal xác nhận xóa
+const DeleteConfirmModal = ({ isOpen, onClose, onConfirm, user, isDeleting }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+        <div className="flex items-center mb-4">
+          <ExclamationTriangleIcon className="h-6 w-6 text-red-500 mr-3" />
+          <h3 className="text-lg font-semibold text-gray-900">Xác nhận xóa người dùng</h3>
+        </div>
+        
+        <div className="mb-6">
+          <p className="text-gray-600 mb-2">
+            Bạn có chắc chắn muốn xóa người dùng này không?
+          </p>
+          <div className="bg-gray-50 p-3 rounded-md">
+            <p className="font-medium text-gray-900">{user?.name}</p>
+            <p className="text-sm text-gray-600">@{user?.userName}</p>
+            <p className="text-sm text-gray-600">{user?.departmentID?.name}</p>
+          </div>
+          <p className="text-red-600 text-sm mt-2 font-medium">
+            ⚠️ Hành động này không thể hoàn tác!
+          </p>
+        </div>
+
+        <div className="flex justify-end space-x-3">
+          <button
+            onClick={onClose}
+            disabled={isDeleting}
+            className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition disabled:opacity-50"
+          >
+            Hủy
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={isDeleting}
+            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition disabled:opacity-50 flex items-center"
+          >
+            {isDeleting ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Đang xóa...
+              </>
+            ) : (
+              'Xóa người dùng'
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const UserListPage = () => {
   const { users, loading, error, fetchUsers } = useUsers();
   const navigate = useNavigate();
@@ -60,9 +120,12 @@ const UserListPage = () => {
 
   const [showFilterPanel, setShowFilterPanel] = useState(false);
 
-  // Thêm state mới để quản lý các người dùng đã chọn
-  const [selectedUserIds, setSelectedUserIds] = useState([]);
 
+  // States cho modal xóa
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [selectedUserIds, setSelectedUserIds] = useState([]);
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
@@ -127,20 +190,51 @@ const UserListPage = () => {
   };
 
   const handleEditUser = (user) => {
+    // Chuyển hướng đến trang chỉnh sửa với id của người dùng
     navigate(`/users/edit/${user._id}`);
   };
 
   const handleDeleteUser = (user) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa người dùng ${user.name}?`)) {
-      console.log('Xóa người dùng:', user._id);
-      // Thêm logic xóa người dùng tại đây
-    } else {
-      console.log('Hủy xóa.');
+    setUserToDelete(user);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!userToDelete) return;
+
+    try {
+      setIsDeleting(true);
+      
+      await userService.deleteUser(userToDelete._id);
+      
+      // Hiển thị thông báo thành công
+      toast.success(`Xóa người dùng thành công!`);
+      
+      // Refresh danh sách người dùng
+      await fetchUsers(searchQuery, filterDepartment, filterRole, filterGender, filterIsLocked);
+      
+      // Đóng modal
+      setShowDeleteModal(false);
+      setUserToDelete(null);
+      
+    } catch (error) {
+      console.error('Lỗi khi xóa người dùng:', error);
+      toast.error(error.message || 'Có lỗi xảy ra khi xóa người dùng');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleCloseDeleteModal = () => {
+    if (!isDeleting) {
+      setShowDeleteModal(false);
+      setUserToDelete(null);
+
     }
   };
 
   // ----------------------------------------------------
-  // 👉 CÁC HÀM MỚI ĐƯỢC THÊM VÀO ĐỂ TRUYỀN XUỐNG DATATABLE
+  // CÁC HÀM MỚI ĐƯỢC THÊM VÀO ĐỂ TRUYỀN XUỐNG DATATABLE
   // Xử lý khi chọn/bỏ chọn tất cả các dòng
   const handleSelectAll = (e) => {
     const isChecked = e.target.checked;
@@ -322,6 +416,15 @@ const UserListPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal xác nhận xóa */}
+      <DeleteConfirmModal
+        isOpen={showDeleteModal}
+        onClose={handleCloseDeleteModal}
+        onConfirm={handleConfirmDelete}
+        user={userToDelete}
+        isDeleting={isDeleting}
+      />
     </div>
   );
 };

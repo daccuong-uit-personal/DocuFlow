@@ -4,7 +4,9 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-import { Toaster } from 'react-hot-toast';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import './toastCustom.css';
 
 import LoginPage from "./pages/Auth/LoginPage";
 
@@ -35,13 +37,19 @@ const App = () => {
         
       </AuthProvider>
       
-      <Toaster
-        toastOptions={{
-          className: "",
-          style: {
-            fontSize: "13px",
-          },
-        }}
+      {/* React Toastify Container */}
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+        className="custom-toast-container"
       />
     </div>
   )

@@ -2,7 +2,7 @@
 
 const User = require('../models/User');
 const Department = require('../models/Department');
-const Role  = require('../models/Roles');
+const Role = require('../models/Roles');
 
 // Xử lý các thao tác với người dùng
 
@@ -45,10 +45,10 @@ exports.getUsers = async (queryOptions) => {
             if (foundRole) {
                 query.role = foundRole._id;
             } else {
-                query.role = null; 
+                query.role = null;
             }
         }
-        
+
         if (departmentID) {
             const foundDepartment = await Department.findOne({ name: departmentID });
             if (foundDepartment) {
@@ -74,7 +74,7 @@ exports.getUserById = async (userId) => {
     try {
         const user = await User.findById(userId)
             .populate('departmentID', 'name')
-            .populate('role', 'name');
+            .populate('role', 'name description');
         if (!user) {
             throw new Error('User not found.');
         }
@@ -85,24 +85,75 @@ exports.getUserById = async (userId) => {
     }
 };
 
-exports.updateUser = async (userId, updatedData) => {
+exports.updateUser = async (userId, updatedData, requester) => {
     try {
+        // Validate dữ liệu đầu vào
+        if (!updatedData.name || !updatedData.name.trim()) {
+            throw new Error('Tên cán bộ không được để trống.');
+        }
+        if (!updatedData.phoneNumber || !updatedData.phoneNumber.trim()) {
+            throw new Error('Số điện thoại không được để trống.');
+        }
+        if (!updatedData.dayOfBirth) {
+            throw new Error('Ngày sinh không được để trống.');
+        }
+        if (!updatedData.gender) {
+            throw new Error('Giới tính không được để trống.');
+        }
+        if (!updatedData.role) {
+            throw new Error('Vai trò không được để trống.');
+        }
+        if (!updatedData.departmentID) {
+            throw new Error('Phòng ban không được để trống.');
+        }
+
         const user = await User.findById(userId).populate('role').populate('departmentID');
         if (!user) {
             throw new Error('Không tìm thấy người dùng!');
         }
 
-        if (updatedData.role) {
-            if (user.roleName !== 'admin') {
+        // Kiểm tra vai trò và phòng ban có tồn tại không
+        const [roleExists, departmentExists] = await Promise.all([
+            Role.findById(updatedData.role),
+            Department.findById(updatedData.departmentID)
+        ]);
+
+        if (!roleExists) {
+            throw new Error('Vai trò không tồn tại.');
+        }
+        if (!departmentExists) {
+            throw new Error('Phòng ban không tồn tại.');
+        }
+
+        // Kiểm tra quyền chỉnh sửa vai trò (chỉ admin mới được thay đổi vai trò)
+        if (requester && updatedData.role !== user.role._id.toString()) {
+            const requesterUser = await User.findById(requester.userId).populate('role');
+            if (!requesterUser || requesterUser.role?.name !== 'admin') {
                 throw new Error('Chỉ admin mới có quyền chỉnh sửa vai trò của người dùng.');
             }
         }
 
-        // Cập nhật thông tin người dùng
-        Object.assign(user, updatedData);
-        await user.save();
+        // Chuẩn bị dữ liệu để cập nhật
+        const updateFields = {
+            name: updatedData.name.trim(),
+            gender: updatedData.gender,
+            phoneNumber: updatedData.phoneNumber.trim(),
+            dayOfBirth: new Date(updatedData.dayOfBirth),
+            address: updatedData.address ? updatedData.address.trim() : '',
+            role: updatedData.role,
+            departmentID: updatedData.departmentID,
+            updateAt: new Date()
+        };
 
-        return user;
+        const updatedUser = await User.findByIdAndUpdate(userId, updateFields, { new: true })
+            .populate('role', 'name description')
+            .populate('departmentID', 'name');
+
+        if (!updatedUser) {
+            throw new Error('Cập nhật người dùng thất bại.');
+        }
+
+        return updatedUser;
     } catch (error) {
         console.error("Lỗi khi cập nhật người dùng:", error);
         throw error;
