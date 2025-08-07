@@ -19,7 +19,6 @@ exports.login = async (req, res) => {
 };
 
 exports.logout = (req, res) => {
-    // Logic đăng xuất sẽ được xử lý ở client bằng cách xóa token
     res.status(200).json({ message: 'Đăng xuất thành công' });
 };
 

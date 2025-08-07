@@ -68,11 +68,36 @@ exports.updateDocument = async (req, res) => {
 exports.deleteDocument = async (req, res) => {
     try {
         const document = await DocumentService.deleteDocument(req.params.id);
-        return res.status(200).json({ document });
+        if (!document) {
+            return res.status(404).json({ message: "Không tìm thấy văn bản." });
+        }
+        return res.status(200).json({ message: "Xóa văn bản thành công." });
     } catch (error) {
-        return res.status(500).json({ error: error.message });
+        return res.status(500).json({ message: error.message });
     }
-}
+};
+
+exports.deleteManyDocuments = async (req, res) => {
+    try {
+        const { ids } = req.query;
+
+        if (!ids) {
+            return res.status(400).json({ message: "Thiếu chuỗi IDs." });
+        }
+
+        const idsArray = ids.split(','); 
+
+        if (idsArray.length === 0) {
+             return res.status(400).json({ message: "Chuỗi IDs không hợp lệ." });
+        }
+
+        const result = await DocumentService.deleteManyDocuments(idsArray);
+
+        return res.status(200).json({ message: `Xóa thành công ${result.deletedCount} văn bản.`, deletedCount: result.deletedCount });
+    } catch (error) {
+        return res.status(500).json({ message: "Lỗi máy chủ khi xóa văn bản.", error: error.message });
+    }
+};
 
 // Chuyển xử lý văn bản cho người khác
 exports.delegateDocument = async (req, res) => {

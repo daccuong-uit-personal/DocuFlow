@@ -18,7 +18,6 @@ exports.getUsers = async (queryOptions) => {
         } = queryOptions;
 
         let query = {};
-        console.log(queryOptions);
 
         // Lọc theo từ khóa tìm kiếm trên nhiều trường
         if (searchText) {
@@ -58,7 +57,6 @@ exports.getUsers = async (queryOptions) => {
                 query.departmentID = null;
             }
         }
-        console.log(query);
 
         // Thực hiện truy vấn với populate để lấy thông tin chi tiết
         const users = await User.find(query)

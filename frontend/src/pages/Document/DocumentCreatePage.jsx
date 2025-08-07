@@ -125,11 +125,11 @@ const DocumentCreatePage = () => {
     };
 
     return (
-        <div className="bg-gray-100 min-h-full p-4">
+        <div className="bg-gray-100 min-h-full p-0">
             <ToastContainer position="top-right" /> {/* Vị trí toast container */}
             <form onSubmit={handleSubmit}>
                 {/* Header và Breadcrumb */}
-                <div className="flex justify-between items-center mb-4">
+                <div className="flex justify-between items-center mb-2">
                     <div>
                         <h1 className="text-lg font-semibold text-gray-800">Tạo văn bản đến</h1>
                     </div>
@@ -148,7 +148,7 @@ const DocumentCreatePage = () => {
                     {/* Hàng 1 */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                         <div className="col-span-1">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Số văn bản</label>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Số văn bản</label>
                             <input
                                 type="text"
                                 name="documentBook"
@@ -159,7 +159,7 @@ const DocumentCreatePage = () => {
                             />
                         </div>
                         <div className="col-span-1">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Số phụ</label>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Số phụ</label>
                             <input
                                 type="text"
                                 name="documentNumber"
@@ -169,7 +169,7 @@ const DocumentCreatePage = () => {
                             />
                         </div>
                         <div className="col-span-1">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Đơn vị gửi</label>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Đơn vị gửi</label>
                             <select
                                 name="sendingUnit"
                                 value={formData.sendingUnit}
@@ -186,7 +186,7 @@ const DocumentCreatePage = () => {
                             </select>
                         </div>
                         <div className="col-span-1">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Đơn vị nhận</label>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Đơn vị nhận</label>
                             <select
                                 name="recivingUnit"
                                 value={formData.recivingUnit}
@@ -207,7 +207,7 @@ const DocumentCreatePage = () => {
                     {/* Hàng 2 */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                         <div className="col-span-1">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Ngày VB</label>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Ngày VB</label>
                             <input
                                 type="date"
                                 name="recivedDate"
@@ -218,7 +218,7 @@ const DocumentCreatePage = () => {
                             />
                         </div>
                         <div className="col-span-1">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Ngày nhận VB</label>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Ngày nhận VB</label>
                             <input
                                 type="date"
                                 name="recordedDate"
@@ -228,7 +228,7 @@ const DocumentCreatePage = () => {
                             />
                         </div>
                         <div className="col-span-1">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Ngày vào sổ</label>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Ngày vào sổ</label>
                             <input
                                 type="date"
                                 name="recordedDate" // Dùng chung trường này với "Ngày nhận VB"
@@ -238,7 +238,7 @@ const DocumentCreatePage = () => {
                             />
                         </div>
                         <div className="col-span-1">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Hạn trả lời</label>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Hạn trả lời</label>
                             <input
                                 type="date"
                                 name="dueDate"
@@ -252,7 +252,7 @@ const DocumentCreatePage = () => {
                     {/* Hàng 3 */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                         <div className="col-span-1">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Phương thức nhận</label>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Phương thức nhận</label>
                             <select
                                 name="receivingMethod"
                                 value={formData.receivingMethod}
@@ -264,7 +264,7 @@ const DocumentCreatePage = () => {
                             </select>
                         </div>
                         <div className="col-span-1">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Độ mật</label>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Độ mật</label>
                             <select
                                 name="confidentialityLevel"
                                 value={formData.confidentialityLevel}
@@ -277,7 +277,7 @@ const DocumentCreatePage = () => {
                             </select>
                         </div>
                         <div className="col-span-1">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Độ khẩn</label>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Độ khẩn</label>
                             <select
                                 name="urgencyLevel"
                                 value={formData.urgencyLevel}
@@ -290,7 +290,7 @@ const DocumentCreatePage = () => {
                             </select>
                         </div>
                         <div className="col-span-1">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Loại VB</label>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Loại VB</label>
                             <input
                                 type="text"
                                 name="documentType"
@@ -304,7 +304,7 @@ const DocumentCreatePage = () => {
                     {/* Hàng 4 */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                         <div className="col-span-1">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Lĩnh vực</label>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Lĩnh vực</label>
                             <input
                                 type="text"
                                 name="category"
@@ -314,7 +314,7 @@ const DocumentCreatePage = () => {
                             />
                         </div>
                         <div className="col-span-1">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Người ký</label>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Người ký</label>
                             <input
                                 type="text"
                                 name="signer"
@@ -327,7 +327,7 @@ const DocumentCreatePage = () => {
 
                     {/* Hàng Trích yếu */}
                     <div className="mb-6">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Trích yếu</label>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Trích yếu</label>
                         <textarea
                             rows="4"
                             name="summary"
@@ -339,10 +339,10 @@ const DocumentCreatePage = () => {
 
                     {/* Hàng Tệp đính kèm */}
                     <div className="mt-6 flex flex-row items-center space-x-4">
-                        <label className="text-sm font-medium text-gray-700 self-center">Tệp đính kèm</label>
+                        <label className="text-xs font-medium text-gray-700 self-center sticky left-0 z-10">Tệp đính kèm</label>
                         <div className="flex-1 overflow-x-auto">
                             <div className="flex flex-row space-x-2 w-max pb-2">
-                                <label className="h-8 w-max flex items-center px-8 py-2 text-xs font-medium text-white bg-gradient-to-tl from-sky-300 from-30% to-sky-500 border border-gray-300 rounded-lg shadow-sm hover:bg-sky-600 cursor-pointer">
+                                <label className="sticky left-0 z-10 h-8 w-max flex items-center px-8 py-2 text-xs font-medium text-white bg-gradient-to-tl from-sky-300 from-30% to-sky-500 border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50">
                                     Đính kèm
                                     <input
                                         type="file"

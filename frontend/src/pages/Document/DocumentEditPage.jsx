@@ -1,41 +1,53 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import DocumentFormPage from './DocumentFormPage';
-
-// Giả lập dữ liệu từ API
-const mockDocumentData = {
-    soVanBan: 'VB/2025/001',
-    donViGui: 'Phòng ban A',
-    donViNhan: 'Phòng ban B',
-    ngayVB: '2025-08-05',
-    ngayNhanVB: '2025-08-05',
-    ngayVaoSo: '2025-08-05',
-    hanTraLoi: '2025-08-15',
-    soPhu: '007',
-    phuongThucNhan: 'Email',
-    doMat: 'Tuyệt mật',
-    doKhan: 'Rất khẩn',
-    loaiVB: 'Báo cáo',
-    linhVuc: 'Hành chính',
-    nguoiKy: 'Nguyễn Văn A',
-    trichYeu: 'Báo cáo chi tiết quý 3 năm 2025 về tình hình hoạt động của các phòng ban trong công ty.'
-};
+import { useDocuments } from '../../hooks/useDocuments';
 
 const DocumentEditPage = () => {
-    // Tạm thời sử dụng dữ liệu giả lập
-    const [documentData, setDocumentData] = useState(mockDocumentData);
+    const { id } = useParams();
+    const navigate = useNavigate();
 
-    const handleSave = (updatedData) => {
-        // Đây là nơi bạn sẽ gọi API để lưu dữ liệu đã chỉnh sửa
-        console.log('Dữ liệu cần lưu:', updatedData);
-        alert('Giả lập: Dữ liệu đã được lưu thành công!');
-        // Sau khi lưu thành công, bạn có thể chuyển hướng người dùng
-        // navigate(`/documents/${updatedData.id}`);
+    const {
+        selectedDocument,
+        loading,
+        error,
+        fetchDocumentById,
+        updateDocument
+    } = useDocuments();
+
+    useEffect(() => {
+        if (id) {
+            fetchDocumentById(id);
+        }
+    }, [id, fetchDocumentById]);
+
+    const handleSave = async (updatedData) => {
+        try {
+            await updateDocument(id, updatedData);
+            navigate(`/documents/detail/${id}`);
+        } catch (saveError) {
+            console.error('Lỗi khi lưu dữ liệu:', saveError);
+            alert('Lỗi khi lưu dữ liệu. Vui lòng thử lại.');
+        }
     };
+    
+    // Xử lý các trạng thái tải, lỗi và không có dữ liệu
+    if (loading) {
+        return <div className="p-4 text-center text-gray-600">Đang tải dữ liệu văn bản để chỉnh sửa...</div>;
+    }
 
-    // Truyền dữ liệu và hàm xử lý lưu vào component chung
+    if (error) {
+        return <div className="p-4 text-center text-red-600">Lỗi: {error.message || error}</div>;
+    }
+
+    // Kiểm tra nếu không có dữ liệu để chỉnh sửa
+    if (!selectedDocument) {
+        return <div className="p-4 text-center text-gray-600">Không tìm thấy dữ liệu văn bản để chỉnh sửa.</div>;
+    }
+
     return (
         <DocumentFormPage 
-            initialData={documentData} 
+            initialData={selectedDocument} 
             isEditMode={true} 
             onSave={handleSave} 
         />

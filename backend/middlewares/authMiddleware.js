@@ -6,7 +6,6 @@ const { JWT_SECRET } = require('../config/config');
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
-    console.log(token);
     if (token == null) {
         return res.status(401).json({ message: 'Không có token xác thực. Vui lòng đăng nhập.' });
     }
@@ -25,7 +24,6 @@ const authorizePermissions = (requiredPermissions) => {
 
         const hasRequiredPermissions = requiredPermissions.every(perm => userPermissions.includes(perm));
 
-        console.log(req.user);
         if (!hasRequiredPermissions) {
             return res.status(403).json({ message: 'Bạn không có đủ quyền để thực hiện hành động này.' });
         }

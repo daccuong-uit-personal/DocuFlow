@@ -25,7 +25,30 @@ exports.createDocument = async (documentData, userId) => {
 
 exports.getDocumentById = async (documentId) => {
     try {
-        const document = await Document.findById(documentId);
+        const document = await Document.findById(documentId)
+            .populate({
+                path: 'assignedUsers', select: 'name role',
+                populate: {
+                    path: 'role',
+                    select: 'name description'
+                }
+            })
+            .populate({ path: 'createdBy', select: 'name' })
+            .populate('attachments')
+            .populate({
+                path: 'processingHistory',
+                populate: [
+                    {
+                        path: 'assignerId',
+                        select: 'name'
+                    },
+                    {
+                        path: 'assigneeId',
+                        select: 'name'
+                    }
+                ]
+            })
+            ;
         return document;
     } catch (error) {
         console.error("Error fetching document by ID:", error);
@@ -49,6 +72,19 @@ exports.deleteDocument = async (documentId) => {
         return document;
     } catch (error) {
         console.error("Error deleting document:", error);
+        throw error;
+    }
+};
+
+exports.deleteManyDocuments = async (documentIds) => {
+    try {
+        const result = await Document.deleteMany({ _id: { $in: documentIds } });
+        
+        console.log(`${result.deletedCount} documents deleted successfully.`);
+        
+        return result;
+    } catch (error) {
+        console.error("Error deleting documents:", error);
         throw error;
     }
 };

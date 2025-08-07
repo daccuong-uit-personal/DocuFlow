@@ -5,7 +5,6 @@ const UserService = require("../services/userService");
 exports.getUsers = async (req, res) => {
     try {
         const queryOptions = req.query;
-        console.log("Controller: ",queryOptions);
         const users = await UserService.getUsers(queryOptions);
         res.status(200).json(users);
     } catch (error) {
