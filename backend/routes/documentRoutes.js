@@ -12,7 +12,8 @@ const {
     delegateDocument,
     markAsComplete,
     recallDocument,
-    updateProcessor
+    updateProcessor,
+    deleteManyDocuments
 } = require("../controllers/documentController");
 
 const { authenticateToken, authorizePermissions } = require("../middlewares/authMiddleware");
@@ -22,6 +23,7 @@ router.route("/").get(authenticateToken, authorizePermissions(['document:read'])
 router.route("/").post(authenticateToken, authorizePermissions(['document:create']), upload.array('attachments', 10), createDocument);
 router.route("/:id").get(authenticateToken, authorizePermissions(['document:read']), getDocumentById);
 router.route("/:id").put(authenticateToken, authorizePermissions(['document:update']), updateDocument);
+router.route('/bulk-delete').delete(authenticateToken, authorizePermissions(['document:delete']), deleteManyDocuments);
 router.route("/:id").delete(authenticateToken, authorizePermissions(['document:delete']), deleteDocument);
 
 router.route("/:id/delegate").post(authenticateToken, authorizePermissions(['document:delegate']), delegateDocument);
