@@ -8,7 +8,9 @@ const documentService = {
         status = '',
         documentType = '',
         urgencyLevel = '',
-        confidentialityLevel = ''
+        confidentialityLevel = '',
+        recivedDateFrom = '',
+        recivedDateTo = ''
     ) => {
         try {
             const token = localStorage.getItem('token');
@@ -21,7 +23,9 @@ const documentService = {
                     status: status,
                     documentType: documentType,
                     urgencyLevel: urgencyLevel,
-                    confidentialityLevel: confidentialityLevel
+                    confidentialityLevel: confidentialityLevel,
+                    recivedDateFrom: recivedDateFrom,
+                    recivedDateTo: recivedDateTo
                 }
             });
             return response.data;
@@ -30,7 +34,7 @@ const documentService = {
             throw error.response?.data?.message || 'Lỗi khi lấy danh sách văn bản';
         }
     },
-    
+
     getDocumentById: async (documentId) => {
         try {
             const token = localStorage.getItem('token');
@@ -44,7 +48,52 @@ const documentService = {
             console.error("Error fetching document by ID:", error);
             throw error.response?.data?.message || 'Lỗi khi lấy chi tiết văn bản';
         }
-    }
+    },
+
+    updateDocument: async (documentId, updatedData) => {
+        try {
+            const token = localStorage.getItem('token');
+            const dataToSend = { ...updatedData };
+
+            if (dataToSend.documentNumber) {
+                delete dataToSend.documentNumber;
+            }
+            if (dataToSend._id) {
+                delete dataToSend._id;
+            }
+            const response = await axios.put(`${API_DOCUMENTS}${documentId}`, dataToSend, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+            return response.data;
+        } catch (error) {
+            console.error(`Lỗi khi cập nhật văn bản có ID ${documentId}:`, error);
+            throw error;
+        }
+    },
+    deleteDocuments: async (documentIds) => {
+        try {
+            const token = localStorage.getItem('token');
+            
+            const idsString = documentIds.join(',');
+
+            const response = await axios.delete(`${API_DOCUMENTS}bulk-delete`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                },
+                params: {
+                    ids: idsString
+                }
+            });
+            
+            return response.data;
+        } catch (error) {
+            console.error('Lỗi khi xóa danh sách văn bản:', error);
+            throw error;
+        }
+    },
+
 };
 
 export default documentService;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 
@@ -9,32 +9,36 @@ import {
   ArrowUpIcon,
   ArrowDownIcon,
 } from '@heroicons/react/24/outline';
+import { formatDate } from '../../utils/helper';
 
 // Reusable DataTable component
-const DataTable = ({ data, columns, onRowView, onRowEdit, onRowDelete }) => {
+const DataTable = ({ data, columns, onRowView, onRowEdit, onRowDelete, onRowClick, selectedItems, onSelectOne, onSelectAll }) => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
 
   const navigate = useNavigate();
 
-  // Sorting logic for the table data
-    const sortedData = [...data].sort((a, b) => {
+  const selectAllCheckboxRef = useRef(null);
+
+  useEffect(() => {
+    if (selectAllCheckboxRef.current) {
+      const isIndeterminate = selectedItems.length > 0 && selectedItems.length < data.length;
+      selectAllCheckboxRef.current.indeterminate = isIndeterminate;
+    }
+  }, [selectedItems, data.length]);
+
+  // Xử lý sắp xếp ngày tháng
+  const sortedData = [...data].sort((a, b) => {
     if (!sortConfig.key) return 0;
-    if (a[sortConfig.key] < b[sortConfig.key]) {
-      return sortConfig.direction === 'asc' ? -1 : 1;
-    }
-    if (a[sortConfig.key] > b[sortConfig.key]) {
-      return sortConfig.direction === 'asc' ? 1 : -1;
-    }
-    
+
     let aValue = a[sortConfig.key];
     let bValue = b[sortConfig.key];
-    
+
     // Xử lý sắp xếp ngày tháng
     if (aValue instanceof Date && bValue instanceof Date) {
       aValue = aValue.getTime();
       bValue = bValue.getTime();
     }
-    
+
     if (aValue < bValue) {
       return sortConfig.direction === 'asc' ? -1 : 1;
     }
@@ -43,7 +47,7 @@ const DataTable = ({ data, columns, onRowView, onRowEdit, onRowDelete }) => {
     }
     return 0;
   });
-  
+
 
   // Function to request a new sort
   const requestSort = (key) => {
@@ -78,20 +82,20 @@ const DataTable = ({ data, columns, onRowView, onRowEdit, onRowDelete }) => {
     }
   };
 
-  const formatDate = (date) => {
-    if (date instanceof Date) {
-      return date.toLocaleDateString('vi-VN');
-    }
-    return date;
-  };
-
   return (
     <div className="overflow-x-auto overflow-y-auto h-[60vh] rounded-lg">
       <table className="min-w-full divide-y divide-gray-200 table-fixed">
         <thead className="bg-gray-50">
           <tr>
-            <th className="w-[40px] px-4 py-1 text-left">
-              <input type="checkbox" className="form-checkbox rounded text-blue-500" />
+            <th className="sticky left-0 bg-white z-20 px-4 py-2 text-left">
+              <input
+                type="checkbox"
+                className="form-checkbox rounded text-blue-500 w-3 h-3"
+                ref={selectAllCheckboxRef}
+                onClick={(e) => e.stopPropagation()}
+                onChange={onSelectAll}
+                checked={selectedItems.length === data.length && data.length > 0}
+              />
             </th>
             {columns.map((column) => (
               <th
@@ -122,17 +126,19 @@ const DataTable = ({ data, columns, onRowView, onRowEdit, onRowDelete }) => {
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {sortedData.map((item, index) => (
-            <tr key={index}>
-              <td className="px-4 py-3 whitespace-nowrap">
-                <input type="checkbox" className="form-checkbox rounded text-blue-500" />
+            <tr key={index}
+              onClick={() => onRowClick && onRowClick(item)}
+              className='cursor-pointer hover:bg-gray-100'>
+              <td className="sticky left-0 z-20 bg-white/70 px-4 py-3 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                <input type="checkbox" className="form-checkbox rounded text-blue-500  w-3 h-3" checked={selectedItems.includes(item._id)} onChange={(e) => onSelectOne(e, item._id)} />
               </td>
               {columns.map((column) => (
                 <td key={column.key} className={`px-4 py-3 text-xs text-gray-900 whitespace-nowrap overflow-hidden text-ellipsis 
-                                    ${column.widthClass}
-                                    ${column.sticky ? 'sticky right-0 bg-white z-10' : ''}`}>
+                  ${column.widthClass}
+                  ${column.sticky ? 'sticky right-0 bg-white z-10' : ''}`}>
                   <div className="h-[40px] overflow-y-auto">
                     {column.key === 'action' ? (
-                      <div className="flex items-center justify-center space-x-2">
+                      <div className="flex items-center justify-center space-x-2" onClick={(e) => e.stopPropagation()}>
                         {onRowView && (
                           <button onClick={() => onRowView(item)} className="text-blue-500 hover:text-blue-700">
                             <EyeIcon className="h-5 w-5" />
@@ -160,10 +166,10 @@ const DataTable = ({ data, columns, onRowView, onRowEdit, onRowDelete }) => {
                     ) : (column.key === 'recivedDate' || column.key === 'recordedDate' || column.key === 'dueDate') ? (
                       formatDate(item[column.key])
                     ) : (column.key === 'departmentID' || column.key === 'role') ? (
-                          item[column.key]?.name
-                        ) : (
-                            item[column.key]
-                          )}
+                      item[column.key]?.name
+                    ) : (
+                      item[column.key]
+                    )}
                   </div>
                 </td>
               ))}
