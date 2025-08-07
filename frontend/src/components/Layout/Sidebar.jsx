@@ -21,10 +21,10 @@ import {
   EyeIcon,
   WrenchScrewdriverIcon,
   Bars3Icon,
-  RectangleStackIcon, // Đã thêm icon cho Documents
+  RectangleStackIcon,
 } from "@heroicons/react/24/solid";
 
-// --- Sidebar Component (Thành phần Sidebar đã cập nhật) ---
+// --- Sidebar Component ---
 const Sidebar = () => {
   // Thay đổi state để lưu trữ nhiều ID đang mở
   const [open, setOpen] = React.useState([]);
@@ -41,30 +41,30 @@ const Sidebar = () => {
 
   const navItems = [
     {
-      name: 'Documents',
+      name: 'Văn bản',
       icon: <RectangleStackIcon className="h-5 w-5 pr-1" />,
       link: '/documents',
       id: 1,
       subItems: [
-        { name: 'Document List', icon: <Bars3Icon className="h-3 w-5" />, link: '/documents' },
-        { name: 'Create Document', icon: <PlusCircleIcon className="h-3 w-5" />, link: '/documents/create' },
+        { name: 'Danh sách văn bản', icon: <Bars3Icon className="h-3 w-5" />, link: '/documents' },
+        { name: 'Tạo mới văn bản', icon: <PlusCircleIcon className="h-3 w-5" />, link: '/documents/create' },
         // { name: 'Document Detail', icon: <EyeIcon className="h-3 w-5" />, link: '/documents/detail' },
         // { name: 'Process Document', icon: <WrenchScrewdriverIcon className="h-3 w-5" />, link: '/documents/process' },
       ]
     },
     {
-      name: 'Users',
+      name: 'Người dùng',
       icon: <UserIcon className="h-5 w-5 pr-1" />,
       link: '/users',
       id: 2,
       subItems: [
-        { name: 'User List', icon: <Bars3Icon className="h-3 w-5" />, link: '/users' },
+        { name: 'Danh sách người dùng', icon: <Bars3Icon className="h-3 w-5" />, link: '/users' },
         // { name: 'User Detail', icon: <EyeIcon className="h-3 w-5" />, link: '/users/detail' },
-        { name: 'Create User', icon: <PlusCircleIcon className="h-3 w-5" />, link: '/users/create' },
+        { name: 'Tạo mới người dùng', icon: <PlusCircleIcon className="h-3 w-5" />, link: '/users/create' },
       ]
     },
-    { name: 'Profile', icon: <UserCircleIcon className="h-5 w-5 pr-1" />, link: '/profile', id: 3 },
-    { name: 'Log Out', icon: <PowerIcon className="h-5 w-5 pr-1" />, link: '/login', id: 4 },
+    { name: 'Hồ sơ', icon: <UserCircleIcon className="h-5 w-5 pr-1" />, link: '/profile', id: 3 },
+    { name: 'Đăng xuất', icon: <PowerIcon className="h-5 w-5 pr-1" />, link: '/login', id: 4 },
   ];
 
   return (

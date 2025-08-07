@@ -19,9 +19,9 @@ const DynamicRouter = () => {
       <Route path="/documents/edit:id" element={<DocumentEditPage />} />
       <Route path="/documents/process:id" element={<DocumentProcessPage />} />
       <Route path="/users" element={<UserListPage />} />
-      <Route path="/users/detail" element={<UserDetailPage />} />
+      <Route path="/users/detail/:id" element={<UserDetailPage />} />
       <Route path="/users/create" element={<UserCreatePage />} />
-      <Route path="/users/edit" element={<UserEditPage />} />
+      <Route path="/users/edit/:id" element={<UserEditPage />} />
       <Route path="/profile" element={<ProfilePage />} />
       {/* Thêm các route khác vào đây */}
       <Route path="*" element={<div className="p-8 text-center text-gray-500">404 - Không tìm thấy trang.</div>} />

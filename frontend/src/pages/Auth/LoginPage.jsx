@@ -1,7 +1,7 @@
 // Trang đăng nhập
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Toaster } from 'react-hot-toast';
+import { ToastContainer } from 'react-toastify';
 import LoginForm from '../../components/Auth/LoginForm';
 import { images } from '../../assets/images/images';
 
@@ -13,7 +13,7 @@ const LoginPage = () => {
       transition={{ duration: 0.6, ease: 'easeOut' }}
       className="flex flex-col lg:flex-row items-center justify-center min-h-screen font-sans "
     >
-      <Toaster />
+      <ToastContainer />
 
       {/* Left section: Promotional Content - now a full half of the screen */}
       <div className="w-full lg:w-1/2 h-screen flex justify-center items-center bg-white shadow-2xl p-4 md:p-6 lg:p-8 lg:rounded-l-none">

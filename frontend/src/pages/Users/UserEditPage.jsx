@@ -1,39 +1,164 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { CheckIcon, XMarkIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
+import { toast } from 'react-toastify';
+import userService from '../../services/userService';
+
+// Component LoadingSpinner inline để tránh lỗi import
+const LoadingSpinner = ({ message = 'Đang tải...' }) => (
+  <div className="flex flex-col items-center justify-center p-8">
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    <p className="mt-4 text-sm text-gray-600">{message}</p>
+  </div>
+);
 
 const UserEditPage = () => {
-  // Khởi tạo hook useNavigate
   const navigate = useNavigate();
+  const { id } = useParams();
 
   const [userInfo, setUserInfo] = useState({
-    username: 'nguyendaccuong',
-    fullName: 'Nguyễn Đắc Cường',
-    dateOfBirth: '1990-01-01',
+    userName: '',
+    name: '',
+    dayOfBirth: '',
     role: '',
-    department: '',
-    gender: 'Nam',
-    phoneNumber: '0123456789',
-    address: 'Số 123, Đường ABC, Quận XYZ, TP.HCM',
+    departmentID: '',
+    gender: '',
+    phoneNumber: '',
+    address: '',
   });
+
+  const [departments, setDepartments] = useState([]);
+  const [roles, setRoles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  // Load dữ liệu khi component mount
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+
+        // Load user data, departments, và roles song song từ database
+        const [userResponse, departmentsData, rolesData] = await Promise.all([
+          userService.getUserById(id),
+          userService.getDepartments(),
+          userService.getRoles()
+        ]);
+
+        const user = userResponse.user;
+        
+        // Format ngày sinh để hiển thị trong input date
+        const formattedDate = user.dayOfBirth 
+          ? new Date(user.dayOfBirth).toISOString().split('T')[0] 
+          : '';
+
+        setUserInfo({
+          userName: user.userName || '',
+          name: user.name || '',
+          dayOfBirth: formattedDate,
+          role: user.role?._id || '',
+          departmentID: user.departmentID?._id || '',
+          gender: user.gender || '',
+          phoneNumber: user.phoneNumber || '',
+          address: user.address || '',
+        });
+
+        // Sử dụng dữ liệu thật từ database
+        setDepartments(departmentsData || []);
+        setRoles(rolesData || []);
+
+      } catch (err) {
+        console.error('Lỗi khi load dữ liệu:', err);
+        toast.error(err.message || 'Có lỗi xảy ra khi tải dữ liệu');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      loadData();
+    }
+  }, [id]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setUserInfo((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleConfirm = () => {
-    console.log('Thông tin được cập nhật:', userInfo);
+  const handleConfirm = async () => {
+    try {
+      setSaving(true);
+
+      // Validate dữ liệu
+      if (!userInfo.name.trim()) {
+        toast.error('Tên cán bộ không được để trống');
+        return;
+      }
+      if (!userInfo.phoneNumber.trim()) {
+        toast.error('Số điện thoại không được để trống');
+        return;
+      }
+      if (!userInfo.dayOfBirth) {
+        toast.error('Ngày sinh không được để trống');
+        return;
+      }
+      if (!userInfo.gender) {
+        toast.error('Vui lòng chọn giới tính');
+        return;
+      }
+      if (!userInfo.role) {
+        toast.error('Vui lòng chọn vai trò');
+        return;
+      }
+      if (!userInfo.departmentID) {
+        toast.error('Vui lòng chọn phòng ban');
+        return;
+      }
+
+      // Chuẩn bị dữ liệu để gửi lên server
+      const updateData = {
+        name: userInfo.name.trim(),
+        gender: userInfo.gender,
+        phoneNumber: userInfo.phoneNumber.trim(),
+        dayOfBirth: userInfo.dayOfBirth,
+        address: userInfo.address.trim(),
+        role: userInfo.role,
+        departmentID: userInfo.departmentID,
+      };
+
+      await userService.updateUser(id, updateData);
+      
+      // Hiển thị thông báo thành công
+      toast.success('Cập nhật thông tin người dùng thành công!');
+      
+      // Chuyển về trang danh sách sau 1.5 giây
+      setTimeout(() => {
+        navigate('/users');
+      }, 1500);
+
+    } catch (err) {
+      console.error('Lỗi khi cập nhật:', err);
+      toast.error(err.message || 'Có lỗi xảy ra khi cập nhật thông tin');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleCancel = () => {
-    console.log('Đã hủy chỉnh sửa');
+    navigate(-1);
   };
 
-  // Thêm hàm xử lý Quay lại
   const handleGoBack = () => {
-      navigate(-1);
+    navigate(-1);
   };
+
+  if (loading) {
+    return (
+      <div className="bg-gray-100 min-h-full font-sans">
+        <LoadingSpinner message="Đang tải thông tin người dùng..." />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-100 min-h-full font-sans">
@@ -66,33 +191,79 @@ const UserEditPage = () => {
 
           {/* Thông tin người dùng */}
           <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-            {[
-              { id: 'username', label: 'Tên đăng nhập' },
-              { id: 'fullName', label: 'Tên cán bộ' },
-              { id: 'phoneNumber', label: 'Số điện thoại' },
-              { id: 'address', label: 'Địa chỉ' },
-            ].map(({ id, label }) => (
-              <div key={id}>
-                <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-                <input
-                  type="text"
-                  id={id}
-                  name={id}
-                  value={userInfo[id]}
-                  onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm sm:text-sm focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-            ))}
+            {/* Tên đăng nhập - readonly */}
+            <div>
+              <label htmlFor="userName" className="block text-sm font-medium text-gray-700 mb-1">
+                Tên đăng nhập
+              </label>
+              <input
+                type="text"
+                id="userName"
+                name="userName"
+                value={userInfo.userName}
+                readOnly
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm sm:text-sm bg-gray-100 cursor-not-allowed"
+              />
+            </div>
+
+            {/* Tên cán bộ */}
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                Tên cán bộ <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                value={userInfo.name}
+                onChange={handleChange}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm sm:text-sm focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Nhập tên cán bộ"
+              />
+            </div>
+
+            {/* Số điện thoại */}
+            <div>
+              <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                Số điện thoại <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="tel"
+                id="phoneNumber"
+                name="phoneNumber"
+                value={userInfo.phoneNumber}
+                onChange={handleChange}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm sm:text-sm focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Nhập số điện thoại"
+              />
+            </div>
+
+            {/* Địa chỉ */}
+            <div>
+              <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
+                Địa chỉ
+              </label>
+              <input
+                type="text"
+                id="address"
+                name="address"
+                value={userInfo.address}
+                onChange={handleChange}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm sm:text-sm focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Nhập địa chỉ"
+              />
+            </div>
 
             {/* Ngày sinh */}
             <div>
-              <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700 mb-1">Ngày sinh</label>
+              <label htmlFor="dayOfBirth" className="block text-sm font-medium text-gray-700 mb-1">
+                Ngày sinh <span className="text-red-500">*</span>
+              </label>
               <input
                 type="date"
-                id="dateOfBirth"
-                name="dateOfBirth"
-                value={userInfo.dateOfBirth}
+                id="dayOfBirth"
+                name="dayOfBirth"
+                value={userInfo.dayOfBirth}
                 onChange={handleChange}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm sm:text-sm focus:ring-blue-500 focus:border-blue-500"
               />
@@ -100,7 +271,9 @@ const UserEditPage = () => {
 
             {/* Giới tính */}
             <div>
-              <label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-1">Giới tính</label>
+              <label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-1">
+                Giới tính <span className="text-red-500">*</span>
+              </label>
               <div className="relative">
                 <select
                   id="gender"
@@ -120,30 +293,50 @@ const UserEditPage = () => {
 
             {/* Vai trò */}
             <div>
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">Vai trò</label>
-              <input
-                type="text"
-                id="role"
-                name="role"
-                value={userInfo.role}
-                onChange={handleChange}
-                placeholder="Nhập vai trò"
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm sm:text-sm focus:ring-blue-500 focus:border-blue-500"
-              />
+              <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
+                Vai trò <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <select
+                  id="role"
+                  name="role"
+                  value={userInfo.role}
+                  onChange={handleChange}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm appearance-none pr-10 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">Chọn vai trò</option>
+                  {roles.map((role) => (
+                    <option key={role._id} value={role._id}>
+                      {role.description || role.name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDownIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
+              </div>
             </div>
 
             {/* Phòng ban */}
             <div>
-              <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-1">Phòng ban</label>
-              <input
-                type="text"
-                id="department"
-                name="department"
-                value={userInfo.department}
-                onChange={handleChange}
-                placeholder="Nhập phòng ban"
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm sm:text-sm focus:ring-blue-500 focus:border-blue-500"
-              />
+              <label htmlFor="departmentID" className="block text-sm font-medium text-gray-700 mb-1">
+                Phòng ban <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <select
+                  id="departmentID"
+                  name="departmentID"
+                  value={userInfo.departmentID}
+                  onChange={handleChange}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm appearance-none pr-10 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">Chọn phòng ban</option>
+                  {departments.map((dept) => (
+                    <option key={dept._id} value={dept._id}>
+                      {dept.name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDownIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
+              </div>
             </div>
           </div>
         </div>
@@ -153,7 +346,8 @@ const UserEditPage = () => {
           <button
             onClick={handleCancel}
             type="button"
-            className="flex items-center px-6 py-2 border border-red-500 text-red-500 rounded-md hover:bg-red-50 transition"
+            disabled={saving}
+            className="flex items-center px-6 py-2 border border-red-500 text-red-500 rounded-md hover:bg-red-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <XMarkIcon className="h-5 w-5 mr-2" />
             Hủy
@@ -161,10 +355,20 @@ const UserEditPage = () => {
           <button
             onClick={handleConfirm}
             type="button"
-            className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+            disabled={saving}
+            className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <CheckIcon className="h-5 w-5 mr-2" />
-            Lưu
+            {saving ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                Đang lưu...
+              </>
+            ) : (
+              <>
+                <CheckIcon className="h-5 w-5 mr-2" />
+                Lưu
+              </>
+            )}
           </button>
         </div>
       </div>
