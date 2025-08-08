@@ -1,6 +1,7 @@
 // src/contexts/AuthContext.jsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import authService from '../services/authService';
+import userService from '../services/userService';
 import { toast } from 'react-toastify';
 
 export const AuthContext = createContext(null);
@@ -34,7 +35,7 @@ export const AuthProvider = ({ children }) => {
 
       localStorage.setItem('user', JSON.stringify(userData));
       localStorage.setItem('token', token);
-      toast.success('Đăng nhập thành công');
+      toast.success('Đăng nhập thành công');
 
       setUser(userData);
       console.log('Login successful:', userData);
@@ -50,30 +51,38 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  // Hàm cập nhật thông tin người dùng hiện tại
+  // Hàm cập nhật thông tin người dùng hiện tại (sử dụng endpoint profile)
   const updateUser = async (updatedData) => {
       try {
-          const token = localStorage.getItem('token');
-          if (!token) {
-              throw new Error("Không tìm thấy token.");
+          if (!user?._id) {
+              throw new Error("Không tìm thấy thông tin người dùng.");
           }
-          const response = await authService.updateUser(user._id, updatedData, token);
+
+          // Sử dụng userService.updateProfile thay vì updateUser
+          const response = await userService.updateProfile(user._id, updatedData);
 
           // Backend trả về user đã cập nhật
-          const newUserData = response.data.user;
+          const newUserData = response.user;
           
           // Cập nhật lại localStorage và state
           localStorage.setItem('user', JSON.stringify(newUserData));
           setUser(newUserData);
           
-          toast.success('Cập nhật thông tin thành công!');
           return newUserData;
       } catch (error) {
           console.error('Update user failed:', error);
-          const errorMessage = error.response?.data?.message || 'Cập nhật thông tin thất bại.';
+          const errorMessage = error.response?.data?.message || error.message || 'Cập nhật thông tin thất bại.';
           toast.error(errorMessage);
           throw new Error(errorMessage);
       }
+  };
+
+  // Hàm cập nhật avatar
+  const updateUserAvatar = (updatedUser) => {
+    // Cập nhật user trong state và localStorage
+    const newUserData = { ...user, avatar: updatedUser.avatar };
+    localStorage.setItem('user', JSON.stringify(newUserData));
+    setUser(newUserData);
   };
 
   const value = {
@@ -82,6 +91,7 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     updateUser,
+    updateUserAvatar,
     loading,
   };
 
