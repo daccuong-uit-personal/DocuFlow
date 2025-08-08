@@ -202,10 +202,10 @@ const UserCreatePage = () => {
   };
 
   return (
-    <div className="bg-gray-100 min-h-screen font-sans p-4">
-      <h1 className="text-2xl font-semibold mb-4 text-gray-800">Cấp tài khoản mới</h1>
+    <div className="bg-gray-100 min-h-screen font-sans">
+      <h1 className="text-lg font-semibold mb-2 text-gray-800">Cấp tài khoản mới</h1>
 
-      <div className="bg-white p-6 rounded-xl shadow-md">
+      <div className="bg-white rounded-xl shadow-md p-4">
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Tên đăng nhập */}
           <div>

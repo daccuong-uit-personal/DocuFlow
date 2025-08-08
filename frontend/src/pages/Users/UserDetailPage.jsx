@@ -1,6 +1,7 @@
 // userdetailpage.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import Avatar from '../../components/common/Avatar';
 
 // Import service
 import userService from '../../services/userService';
@@ -66,11 +67,12 @@ const UserDetailPage = () => {
       <div className="bg-white p-4 rounded-xl shadow-md">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div className="md:col-span-1 lg:col-span-1 flex flex-col items-center">
-            {/* Sử dụng avatar từ dữ liệu người dùng nếu có */}
-            <img 
-              src={userInfo.avatar || "https://placehold.co/150x150/cccccc/ffffff?text=AV"} 
-              alt="Ảnh đại diện" 
-              className="w-36 h-36 rounded-full mb-4 object-cover" 
+            {/* Sử dụng Avatar component */}
+            <Avatar 
+              src={userInfo.avatar}
+              alt="Ảnh đại diện"
+              size="xlarge"
+              className="w-36 h-36 mb-4 border-4 border-gray-200 shadow-lg"
             />
           </div>
           <div className="md:col-span-2 lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">

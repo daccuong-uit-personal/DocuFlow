@@ -123,7 +123,7 @@ exports.updateUser = async (userId, updatedData, requester) => {
 
         // Kiểm tra quyền chỉnh sửa vai trò (chỉ admin mới được thay đổi vai trò)
         if (requester && updatedData.role !== user.role._id.toString()) {
-            const requesterUser = await User.findById(requester.userId).populate('role');
+            const requesterUser = await User.findById(requester.id).populate('role');
             if (!requesterUser || requesterUser.role?.name !== 'admin') {
                 throw new Error('Chỉ admin mới có quyền chỉnh sửa vai trò của người dùng.');
             }
@@ -152,6 +152,89 @@ exports.updateUser = async (userId, updatedData, requester) => {
         return updatedUser;
     } catch (error) {
         console.error("Lỗi khi cập nhật người dùng:", error);
+        throw error;
+    }
+};
+
+exports.updateProfile = async (userId, updatedData, requester) => {
+    try {
+        // Validate dữ liệu đầu vào - chỉ validate các trường có thể chỉnh sửa
+        if (!updatedData.name || !updatedData.name.trim()) {
+            throw new Error('Tên cán bộ không được để trống.');
+        }
+        if (!updatedData.phoneNumber || !updatedData.phoneNumber.trim()) {
+            throw new Error('Số điện thoại không được để trống.');
+        }
+
+        const user = await User.findById(userId).populate('role').populate('departmentID');
+        if (!user) {
+            throw new Error('Không tìm thấy người dùng!');
+        }
+
+        // Kiểm tra quyền cập nhật (chỉ cho phép user cập nhật profile của chính mình hoặc admin)
+        if (requester && requester.id !== userId) {
+            const requesterUser = await User.findById(requester.id).populate('role');
+            if (!requesterUser || requesterUser.role?.name !== 'admin') {
+                throw new Error('Bạn chỉ có thể cập nhật profile của chính mình.');
+            }
+        }
+
+        // Chuẩn bị dữ liệu để cập nhật - chỉ các trường được phép
+        const updateFields = {
+            name: updatedData.name.trim(),
+            phoneNumber: updatedData.phoneNumber.trim(),
+            address: updatedData.address ? updatedData.address.trim() : '',
+            updateAt: new Date()
+        };
+
+        // Thêm các trường optional nếu có
+        if (updatedData.gender) {
+            updateFields.gender = updatedData.gender;
+        }
+        if (updatedData.dayOfBirth) {
+            updateFields.dayOfBirth = new Date(updatedData.dayOfBirth);
+        }
+
+        const updatedUser = await User.findByIdAndUpdate(userId, updateFields, { new: true })
+            .populate('role', 'name description')
+            .populate('departmentID', 'name');
+
+        if (!updatedUser) {
+            throw new Error('Cập nhật thông tin thất bại.');
+        }
+
+        return updatedUser;
+    } catch (error) {
+        console.error("Lỗi khi cập nhật profile:", error);
+        throw error;
+    }
+};
+
+exports.updateUserAvatar = async (userId, avatarPath) => {
+    try {
+        const user = await User.findById(userId);
+        if (!user) {
+            throw new Error('Không tìm thấy người dùng!');
+        }
+
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            {
+                avatar: avatarPath,
+                updateAt: new Date()
+            },
+            { new: true }
+        )
+            .populate('role', 'name description')
+            .populate('departmentID', 'name');
+
+        if (!updatedUser) {
+            throw new Error('Cập nhật ảnh đại diện thất bại.');
+        }
+
+        return updatedUser;
+    } catch (error) {
+        console.error("Lỗi khi cập nhật avatar:", error);
         throw error;
     }
 };
