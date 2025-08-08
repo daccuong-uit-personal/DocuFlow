@@ -9,11 +9,13 @@ const {
     updateDocument,
     deleteDocument,
     getDocuments,
-    delegateDocument,
+    deleteManyDocuments,
+
+    processDocuments,
+    updateProcessors,
+    returnDocuments,
     markAsComplete,
-    recallDocument,
-    updateProcessor,
-    deleteManyDocuments
+    recallDocuments,
 } = require("../controllers/documentController");
 
 const { authenticateToken, authorizePermissions } = require("../middlewares/authMiddleware");
@@ -26,10 +28,10 @@ router.route("/:id").put(authenticateToken, authorizePermissions(['document:upda
 router.route('/bulk-delete').delete(authenticateToken, authorizePermissions(['document:delete']), deleteManyDocuments);
 router.route("/:id").delete(authenticateToken, authorizePermissions(['document:delete']), deleteDocument);
 
-router.route("/:id/delegate").post(authenticateToken, authorizePermissions(['document:delegate']), delegateDocument);
-router.route("/:id/add-processor").post(authenticateToken, authorizePermissions(['document:add-processor']), delegateDocument);
-router.route("/:id/complete").post(authenticateToken, authorizePermissions(['document:complete']), markAsComplete);
-router.route("/:id/recall").post(authenticateToken, authorizePermissions(['document:recall']), recallDocument);
-router.route("/:id/updateProcess").put(authenticateToken, authorizePermissions(['document:updateProcess']), updateProcessor);
+router.route("/process").post(authenticateToken, authorizePermissions(['document:delegate', 'document:add-processor']), processDocuments);
+router.route("/update-processors").put(authenticateToken, authorizePermissions(['document:updateProcess']), updateProcessors);
+router.route("/return").post(authenticateToken, authorizePermissions(['document:return']), returnDocuments);
+router.route("/complete").post(authenticateToken, authorizePermissions(['document:complete']), markAsComplete);
+router.route("/recall").post(authenticateToken, authorizePermissions(['document:recall']), recallDocuments);
 
 module.exports = router;

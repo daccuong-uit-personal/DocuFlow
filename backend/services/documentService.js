@@ -6,6 +6,13 @@ const User = require("../models/User");
 const constants = require("../constants/constants");
 const { canDelegate } = require("./roleFlowService");
 
+// Hàm helper để tạo một entry lịch sử xử lý
+const createHistoryEntry = (action, actorId, details = {}) => ({
+    action: action,
+    actorId: actorId,
+    details: details,
+});
+
 exports.createDocument = async (documentData, userId) => {
     try {
         const document = new Document({
@@ -27,32 +34,37 @@ exports.getDocumentById = async (documentId) => {
     try {
         const document = await Document.findById(documentId)
             .populate({
-                path: 'assignedUsers', select: 'name role',
-                populate: {
-                    path: 'role',
-                    select: 'name description'
-                }
+                path: 'assignedTo.userId',
+                select: 'name role'
             })
-            .populate({ path: 'createdBy', select: 'name' })
-            .populate('attachments')
+            .populate({
+                path: 'assignedTo.assignedBy',
+                select: 'name'
+            })
+            .populate({
+                path: 'createdBy',
+                select: 'name'
+            })
             .populate({
                 path: 'processingHistory',
                 populate: [
                     {
-                        path: 'assignerId',
+                        path: 'actorId',
                         select: 'name'
                     },
                     {
-                        path: 'assigneeId',
+                        path: 'details.processors.userId',
                         select: 'name'
                     }
                 ]
-            })
-            ;
+            });
+        if (!document) {
+            throw new Error('Không tìm thấy văn bản.');
+        }
+
         return document;
     } catch (error) {
-        console.error("Error fetching document by ID:", error);
-        throw error;
+        throw new Error(`Lỗi khi lấy thông tin văn bản: ${error.message}`);
     }
 };
 
@@ -79,9 +91,9 @@ exports.deleteDocument = async (documentId) => {
 exports.deleteManyDocuments = async (documentIds) => {
     try {
         const result = await Document.deleteMany({ _id: { $in: documentIds } });
-        
+
         console.log(`${result.deletedCount} documents deleted successfully.`);
-        
+
         return result;
     } catch (error) {
         console.error("Error deleting documents:", error);
@@ -190,216 +202,165 @@ exports.searchAndFilterDocuments = async (queryOptions) => {
     }
 };
 
-exports.delegateDocument = async (documentId, assignerId, assigneeId, note, deadline, assignerRoleName, action) => {
-    try {
-        const document = await Document.findById(documentId);
-
-        if (!document) {
-            throw new Error('Không tìm thấy văn bản.');
-        }
-
-        if (!document.assignedUsers || !document.assignedUsers.includes(assignerId)) {
-            throw new Error('Bạn không có quyền chuyển xử lý văn bản này.');
-        }
-
-        // Lấy role của assignee ra check
-        const assigneeUser = await User.findById(assigneeId).populate('role');
-
-        if (!assigneeUser) {
-            throw new Error('Không tìm thấy thông tin người dùng.');
-        }
-
-        const assigneeRoleName = assigneeUser.role.name;
-
-        // Kiểm tra luồng xử lý
-        if (!canDelegate(assignerRoleName, assigneeRoleName)) {
-            throw new Error(`"${assignerRoleName}" không được phép chuyển văn bản cho người có vai trò "${assigneeRoleName}" theo luồng xử lý.`);
-        }
-
-
-        if (action === constants.ACTIONS.RETURN) {
-            document.assignedUsers = document.assignedUsers.filter(User => User !== assignerId);
-            console.log("Danh sách người dùng sau khi xóa người gửi:", document.assignedUsers);
-        }
-
-        const actionTemp = (action === constants.ACTIONS.RETURN) ? constants.ACTIONS.RETURN : constants.ACTIONS.DELEGATE;
-
-        const newHistoryEntry = {
-            assignerId: assignerId,
-            assigneeId: assigneeId,
-            action: actionTemp,
-            note: note,
-            deadline: deadline,
-        };
-
-        document.assignedUsers.push(assigneeId);
-
-        document.processingHistory.push(newHistoryEntry);
-        document.status = constants.DOCUMENT_STATUS.PROCESSING;
-
-        await document.save();
-        return document;
-    } catch (error) {
-        console.error("Lỗi khi chuyển xử lý văn bản:", error);
-        throw error;
+exports.processDocuments = async (documentIds, assignerId, processors, note, deadline) => {
+    const documents = await Document.find({ _id: { $in: documentIds } });
+    if (!documents || documents.length === 0) {
+        throw new Error('Không tìm thấy văn bản nào.');
     }
-};
 
-exports.addProcessor = async (documentId, assignerId, newProcessorId, note, deadline) => {
-    try {
-        const document = await Document.findById(documentId);
+    const updatedDocuments = [];
 
-        if (!document) {
-            throw new Error('Không tìm thấy văn bản.');
-        }
-
-        // Kiểm tra xem người giao việc có phải là người xử lý hiện tại không.
-        if (!document.assignedUsers || !document.assignedUsers.includes(assignerId)) {
-            throw new Error('Bạn không có quyền thêm người xử lý cho văn bản này.');
-        }
-
-        document.processingHistory.push(newHistoryEntry);
-
-        // Tạo một đối tượng lịch sử mới
-        const newHistoryEntry = {
-            assignerId: assignerId,
-            assigneeId: newProcessorId,
-            action: constants.ACTIONS.ADD_PROCESSOR,
-            note: note,
-            deadline: deadline,
-        };
-        document.processingHistory.push(newHistoryEntry);
-        document.status = constants.DOCUMENT_STATUS.PROCESSING;
-
-        await document.save();
-        return document;
-    } catch (error) {
-        console.error("Lỗi khi thêm người xử lý:", error);
-        throw error;
-    }
-};
-
-exports.markAsComplete = async (documentId, processorId) => {
-    try {
-        const document = await Document.findById(documentId);
-
-        if (!document) {
-            throw new Error('Không tìm thấy văn bản.');
-        }
-
-        // Kiểm tra xem người thực hiện hành động có nằm trong danh sách người xử lý không.
-        if (!document.assignedUsers || !document.assignedUsers.includes(processorId)) {
-            throw new Error('Bạn không có quyền đánh dấu văn bản này là hoàn thành.');
-        }
-
-        // Tạo một đối tượng lịch sử mới
-        const newHistoryEntry = {
-            assignerId: processorId,
-            assigneeId: processorId,
-            action: constants.ACTIONS.MARK_AS_COMPLETE,
-            note: 'Văn bản đã được xử lý xong.',
-            deadline: Date.now(),
-        };
-
-        // Cập nhật trạng thái và thêm vào lịch sử
-        document.status = constants.DOCUMENT_STATUS.COMPLETED;
-        document.processingHistory.push(newHistoryEntry);
-
-        await document.save();
-        return document;
-    } catch (error) {
-        console.error("Lỗi khi đánh dấu hoàn thành văn bản:", error);
-        throw error;
-    }
-};
-
-exports.recallDocument = async (documentId, requesterId, requesterRoleName) => {
-    try {
-        // Cán bộ cấp thấp nhất không được phép thu hồi văn bản.
-        if (requesterRoleName === 'can_bo') {
-            throw new Error('Bạn không có quyền thu hồi văn bản.');
-        }
-
-        const document = await Document.findById(documentId);
-
-        if (!document) {
-            throw new Error('Không tìm thấy văn bản.');
-        }
-
-        // Tìm hành động 'delegate' gần nhất do người yêu cầu thực hiện.
-        const lastDelegateAction = document.processingHistory.reverse().find(
-            history => history.assignerId.toString() === requesterId && history.action === constants.ACTIONS.DELEGATE
-        );
-        // Tìm hành động 'recall' gần nhất để kiểm tra.
-        const lastRecallAction = document.processingHistory.findLast(
-            history => history.assignerId.toString() === requesterId && history.action === constants.ACTIONS.RECALL
+    for (const doc of documents) {
+        const currentAssignment = doc.assignedTo.find(
+            a => a.userId.toString() === assignerId.toString() && a.status === 'pending'
         );
 
-        // Nếu không có hành động chuyển giao nào hoặc hành động thu hồi gần hơn.
-        if (!lastDelegateAction || (lastRecallAction && lastRecallAction.assignedAt >= lastDelegateAction.assignedAt)) {
-            console.log('Không có hành động chuyển giao nào để thu hồi hoặc văn bản đã được thu hồi rồi. Không thực hiện thay đổi nào.');
-            return document;
+        if (!currentAssignment && doc.createdBy.toString() !== assignerId.toString()) {
+            throw new Error(`Bạn không có quyền xử lý văn bản có ID: ${doc._id}.`);
         }
 
-        // Đảo ngược thứ tự mảng lại như cũ.
-        document.processingHistory.reverse();
-
-        // Tạo một đối tượng lịch sử mới cho hành động thu hồi.
-        const newHistoryEntry = {
-            assignerId: requesterId,
-            assigneeId: requesterId,
-            action: constants.ACTIONS.RECALL,
-            note: `Đã thu hồi văn bản từ người dùng ${lastDelegateAction.assigneeId}.`,
-            deadline: lastDelegateAction.deadline,
-        };
-
-        // Cập nhật danh sách người xử lý: xóa người nhận cũ và thêm người thu hồi vào.
-        document.assignedUsers = document.assignedUsers.filter(
-            id => id.toString() !== lastDelegateAction.assigneeId.toString()
-        );
-        document.assignedUsers.push(requesterId);
-
-        // Thêm vào lịch sử xử lý.
-        document.processingHistory.push(newHistoryEntry);
-        document.status = constants.DOCUMENT_STATUS.PROCESSING;
-
-        await document.save();
-        return document;
-    } catch (error) {
-        console.error("Lỗi khi thu hồi văn bản:", error);
-        throw error;
-    }
-};
-
-exports.updateProcessor = async (documentId, assignerId, newAssigneeId, note, deadline) => {
-    try {
-        const document = await Document.findById(documentId);
-
-        if (!document) {
-            throw new Error('Không tìm thấy văn bản.');
-        }
-
-        // Kiểm tra xem người chỉnh sửa có quyền không.
-        if (!document.assignedUsers || !document.assignedUsers.includes(assignerId)) {
-            throw new Error('Bạn không có quyền chỉnh sửa người xử lý cho văn bản này.');
-        }
-
-        // Tạo một đối tượng lịch sử mới
-        const newHistoryEntry = {
-            assignerId: assignerId,
-            assigneeId: newAssigneeId,
-            action: constants.ACTIONS.UPDATE_PROCESSOR,
+        const newAssignments = processors.map(processor => ({
+            userId: processor.userId,
+            role: processor.role,
             note: note,
             deadline: deadline,
-        };
+            assignedBy: assignerId,
+            status: 'pending'
+        }));
 
-        // Thêm vào lịch sử xử lý
-        document.processingHistory.push(newHistoryEntry);
+        // Thêm người xử lý mới
+        doc.assignedTo.push(...newAssignments);
 
-        await document.save();
-        return document;
-    } catch (error) {
-        console.error("Lỗi khi cập nhật người xử lý:", error);
-        throw error;
+        // Đánh dấu nhiệm vụ hiện tại đã hoàn thành nếu đây là hành động DELEGATE
+        const isDelegateAction = processors.some(p => p.role === 'read');
+        if (isDelegateAction && currentAssignment) {
+            currentAssignment.status = 'completed';
+        }
+
+        // Ghi lại lịch sử
+        doc.processingHistory.push(createHistoryEntry(
+            isDelegateAction ? constants.ACTIONS.DELEGATE : constants.ACTIONS.ADD_PROCESSOR,
+            assignerId,
+            { processors: newAssignments, note: note }
+        ));
+
+        // Cập nhật trạng thái tổng thể của văn bản
+        doc.status = constants.DOCUMENT_STATUS.PROCESSING;
+
+        await doc.save();
+        updatedDocuments.push(doc);
     }
+
+    return updatedDocuments;
+};
+
+// Hàm service để trả lại văn bản
+exports.returnDocuments = async (documentIds, assigneeId, note) => {
+    const documents = await Document.find({ _id: { $in: documentIds } });
+    if (!documents || documents.length === 0) {
+        throw new Error('Không tìm thấy văn bản nào.');
+    }
+
+    const updatedDocuments = [];
+    for (const doc of documents) {
+        const currentAssignment = doc.assignedTo.find(
+            a => a.userId.toString() === assigneeId.toString() && a.status === 'pending'
+        );
+        if (!currentAssignment) {
+            throw new Error(`Bạn không có nhiệm vụ đang chờ xử lý với văn bản có ID: ${doc._id}.`);
+        }
+
+        currentAssignment.status = 'returned';
+
+        // Ghi lại lịch sử
+        doc.processingHistory.push(createHistoryEntry(
+            constants.ACTIONS.RETURN,
+            assigneeId,
+            { note: note }
+        ));
+
+        doc.status = constants.DOCUMENT_STATUS.RETURNED;
+        await doc.save();
+        updatedDocuments.push(doc);
+    }
+
+    return updatedDocuments;
+};
+
+// Hàm service để đánh dấu văn bản đã hoàn thành
+exports.markAsComplete = async (documentIds, processorId) => {
+    const documents = await Document.find({ _id: { $in: documentIds } });
+    if (!documents || documents.length === 0) {
+        throw new Error('Không tìm thấy văn bản nào.');
+    }
+
+    const updatedDocuments = [];
+    for (const doc of documents) {
+        const currentAssignment = doc.assignedTo.find(
+            a => a.userId.toString() === processorId.toString() && a.status === 'pending'
+        );
+        if (!currentAssignment) {
+            throw new Error(`Bạn không có nhiệm vụ đang chờ xử lý với văn bản có ID: ${doc._id}.`);
+        }
+
+        currentAssignment.status = 'completed';
+
+        // Ghi lại lịch sử
+        doc.processingHistory.push(createHistoryEntry(
+            constants.ACTIONS.MARK_COMPLETE,
+            processorId,
+            { note: 'Văn bản đã được xử lý xong.' }
+        ));
+
+        // Nếu tất cả các nhiệm vụ chính (role 'read') đã hoàn thành, cập nhật trạng thái chung
+        const allMainTasksCompleted = doc.assignedTo
+            .filter(a => a.role === 'read')
+            .every(a => a.status === 'completed');
+
+        if (allMainTasksCompleted) {
+            doc.status = constants.DOCUMENT_STATUS.COMPLETED;
+        } else {
+            doc.status = constants.DOCUMENT_STATUS.PROCESSING;
+        }
+
+        await doc.save();
+        updatedDocuments.push(doc);
+    }
+
+    return updatedDocuments;
+};
+
+// Hàm service để thu hồi văn bản
+exports.recallDocuments = async (documentIds, requesterId) => {
+    const documents = await Document.find({ _id: { $in: documentIds } });
+    if (!documents || documents.length === 0) {
+        throw new Error('Không tìm thấy văn bản nào.');
+    }
+
+    const updatedDocuments = [];
+    for (const doc of documents) {
+        const lastAssignment = doc.assignedTo.findLast(
+            a => a.assignedBy.toString() === requesterId.toString() && a.status === 'pending'
+        );
+
+        if (!lastAssignment) {
+            throw new Error(`Không có nhiệm vụ nào của bạn đang chờ xử lý để thu hồi trong văn bản có ID: ${doc._id}.`);
+        }
+
+        // Đánh dấu nhiệm vụ hiện tại là bị từ chối
+        lastAssignment.status = 'rejected';
+
+        // Ghi lại lịch sử
+        doc.processingHistory.push(createHistoryEntry(
+            constants.ACTIONS.RECALL,
+            requesterId,
+            { assigneeId: lastAssignment.userId }
+        ));
+
+        doc.status = constants.DOCUMENT_STATUS.RECALLED;
+        await doc.save();
+        updatedDocuments.push(doc);
+    }
+
+    return updatedDocuments;
 };

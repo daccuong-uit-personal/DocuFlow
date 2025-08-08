@@ -11,21 +11,30 @@ import ProfilePage from "../pages/ProfilePage";
 import { Route, Routes } from "react-router-dom";
 
 const DynamicRouter = () => {
-  return (
-    <Routes>
-      <Route path="/documents" element={<DocumentListPage />} />
-      <Route path="/documents/create" element={<DocumentCreatePage />} />
-      <Route path="/documents/detail/:id" element={<DocumentDetailPage />} />
-      <Route path="/documents/edit/:id" element={<DocumentEditPage />} />
-      <Route path="/documents/process:id" element={<DocumentProcessPage />} />
-      <Route path="/users" element={<UserListPage />} />
-      <Route path="/users/detail/:id" element={<UserDetailPage />} />
-      <Route path="/users/create" element={<UserCreatePage />} />
-      <Route path="/users/edit/:id" element={<UserEditPage />} />
-      <Route path="/profile" element={<ProfilePage />} />
-      {/* Thêm các route khác vào đây */}
-      <Route path="*" element={<div className="p-8 text-center text-gray-500">404 - Không tìm thấy trang.</div>} />
-    </Routes>
-  );
+    return (
+        <Routes>
+            {/* Routes quản lý văn bản */}
+            <Route path="/documents" element={<DocumentListPage />} />
+            <Route path="/documents/create" element={<DocumentCreatePage />} />
+            <Route path="/documents/detail/:id" element={<DocumentDetailPage />} />
+            <Route path="/documents/edit/:id" element={<DocumentEditPage />} />
+            
+            {/* Routes xử lý văn bản */}
+            <Route path="/documents/process" element={<DocumentProcessPage />} />
+
+            {/* Routes quản lý người dùng */}
+            <Route path="/users" element={<UserListPage />} />
+            <Route path="/users/detail/:id" element={<UserDetailPage />} />
+            <Route path="/users/create" element={<UserCreatePage />} />
+            <Route path="/users/edit/:id" element={<UserEditPage />} />
+            
+            {/* Routes cá nhân */}
+            <Route path="/profile" element={<ProfilePage />} />
+            
+            {/* Route 404 */}
+            <Route path="*" element={<div className="p-8 text-center text-gray-500">404 - Không tìm thấy trang.</div>} />
+        </Routes>
+    );
 }
+
 export default DynamicRouter;

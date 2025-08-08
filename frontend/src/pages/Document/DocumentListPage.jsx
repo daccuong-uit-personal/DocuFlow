@@ -16,6 +16,8 @@ import {
 // Import component DataTable
 import DataTable from "../../components/Table/DataTable";
 
+import DocumentProcessPage from './DocumentProcessPage';
+
 import { useDocuments } from '../../hooks/useDocuments';
 
 // Mock data for filter options
@@ -43,14 +45,34 @@ const mockConfidentialityLevels = [
 ];
 
 const mockStatuses = [
+  // Trạng thái mặc định cho tất cả các văn bản
   { value: '', label: 'Tất cả trạng thái' },
-  { value: 'Draft', label: 'Tiếp nhận' },
+
+  // Trạng thái khi văn bản mới được tạo, chờ gửi đi hoặc xử lý
+  { value: 'Draft', label: 'Khởi tạo' },
+
+  // Trạng thái khi văn bản đang chờ sự phê duyệt từ cấp trên
+  { value: 'PendingApproval', label: 'Chờ duyệt' },
+
+  // Trạng thái khi văn bản đã được duyệt và đang được xử lý bởi một hoặc nhiều người
   { value: 'Processing', label: 'Đang xử lý' },
+
+  // Trạng thái khi văn bản đã được hoàn thành tất cả các bước trong quy trình
   { value: 'Completed', label: 'Hoàn thành' },
-  { value: 'Canceled', label: 'Từ chối' },
-  { value: 'Phối hợp', label: 'Phối hợp' },
-  { value: 'Nhận để biết', label: 'Nhận để biết' },
+
+  // Trạng thái khi văn bản bị từ chối phê duyệt
+  { value: 'Rejected', label: 'Bị từ chối' },
+
+  // Trạng thái khi văn bản bị hủy bỏ trước khi hoàn thành
+  { value: 'Canceled', label: 'Hủy' },
+
+  // Trạng thái đặc thù cho các văn bản phối hợp giữa các đơn vị
+  { value: 'Coordination', label: 'Phối hợp' },
+
+  // Trạng thái đặc thù cho các văn bản chỉ cần nhận để đọc và không cần xử lý
+  { value: 'ForInformation', label: 'Nhận để biết' },
 ];
+
 
 const ordersColumns = [
   { key: 'documentNumber', header: 'Số VB', sortable: true, widthClass: 'min-w-[200px]' },
@@ -90,6 +112,11 @@ const DocumentListPage = () => {
   const [filterRecivedDateTo, setFilterRecivedDateTo] = useState('');
 
   const [showFilterPanel, setShowFilterPanel] = useState(false);
+
+  const [isProcessModalOpen, setIsProcessModalOpen] = useState(false);
+
+  const handleOpenProcessModal = () => setIsProcessModalOpen(true);
+  const handleCloseProcessModal = () => setIsProcessModalOpen(false);
 
   // ----------------------------------------------------
   // 👉 CÁC STATE MỚI ĐỂ QUẢN LÝ CHECKBOX
@@ -240,16 +267,11 @@ const DocumentListPage = () => {
 
 
   // ----------------------------------------------------
-  // 👉 THÊM HÀM XỬ LÝ KHI NHẤN NÚT XÓA VÀ CHUYỂN
+  // HÀM XỬ LÝ KHI NHẤN NÚT CHUYỂN
   const handleTransferDocuments = () => {
-    // Logic xử lý chuyển nhiều văn bản
     if (selectedDocumentIds.length > 0) {
+      handleOpenProcessModal();
       console.log('Chuyển các văn bản có IDs:', selectedDocumentIds);
-      // Sau khi chuyển thành công:
-      // 1. Gọi lại API để cập nhật danh sách
-      // fetchDocuments(...); 
-      // 2. Xóa các ID đã chọn
-      setSelectedDocumentIds([]);
     } else {
       console.log('Không có văn bản nào được chọn để chuyển.');
     }
@@ -458,6 +480,12 @@ const DocumentListPage = () => {
             </div>
           </div>
         </div>
+        <DocumentProcessPage
+          isOpen={isProcessModalOpen}
+          onClose={handleCloseProcessModal}
+          documentIds={selectedDocumentIds}
+          mode={'delegate'}
+        />
       </div>
     </div>
   );
