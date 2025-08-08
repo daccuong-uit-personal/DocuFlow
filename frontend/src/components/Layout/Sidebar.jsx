@@ -23,12 +23,15 @@ import {
   Bars3Icon,
   RectangleStackIcon,
 } from "@heroicons/react/24/solid";
+import { usePermissions } from "../../hooks/usePermissions";
+import ProtectedComponent from "../common/ProtectedComponent";
 
 // --- Sidebar Component ---
 const Sidebar = () => {
   // Thay đổi state để lưu trữ nhiều ID đang mở
   const [open, setOpen] = React.useState([]);
   const location = useLocation();
+  const { isAdmin, canViewUsers } = usePermissions();
 
   // Logic mới để thêm/xóa ID vào mảng
   const handleOpen = (value) => {
@@ -48,21 +51,19 @@ const Sidebar = () => {
       subItems: [
         { name: 'Danh sách văn bản', icon: <Bars3Icon className="h-3 w-5" />, link: '/documents' },
         { name: 'Tạo mới văn bản', icon: <PlusCircleIcon className="h-3 w-5" />, link: '/documents/create' },
-        // { name: 'Document Detail', icon: <EyeIcon className="h-3 w-5" />, link: '/documents/detail' },
-        // { name: 'Process Document', icon: <WrenchScrewdriverIcon className="h-3 w-5" />, link: '/documents/process' },
       ]
     },
-    {
+    // Chỉ hiển thị menu Người dùng nếu user là admin
+    ...(isAdmin() ? [{
       name: 'Người dùng',
       icon: <UserIcon className="h-5 w-5 pr-1" />,
       link: '/users',
       id: 2,
       subItems: [
         { name: 'Danh sách người dùng', icon: <Bars3Icon className="h-3 w-5" />, link: '/users' },
-        // { name: 'User Detail', icon: <EyeIcon className="h-3 w-5" />, link: '/users/detail' },
         { name: 'Tạo mới người dùng', icon: <PlusCircleIcon className="h-3 w-5" />, link: '/users/create' },
       ]
-    },
+    }] : []),
     { name: 'Hồ sơ', icon: <UserCircleIcon className="h-5 w-5 pr-1" />, link: '/profile', id: 3 },
     { name: 'Đăng xuất', icon: <PowerIcon className="h-5 w-5 pr-1" />, link: '/login', id: 4 },
   ];
@@ -111,9 +112,8 @@ const Sidebar = () => {
             </Accordion>
           ) : (
             // Các mục còn lại chỉ là ListItem thông thường
-            
             <Link to={item.link} key={item.id}>
-            <hr className="my-2 border-gray-300" />
+              <hr className="my-2 border-gray-300" />
               <ListItem selected={location.pathname === item.link}>
                 <ListItemPrefix>{item.icon}</ListItemPrefix>
                 {item.name}

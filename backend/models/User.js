@@ -19,6 +19,10 @@ const UserSchema = new Schema({
         require: true,
         trim: true
     },
+    avatar: {
+        type: String,
+        default: null
+    },
     gender: {
         type: String,
         enum: [constants.GENDER.MALE, constants.GENDER.FEMALE, constants.GENDER.OTHER],

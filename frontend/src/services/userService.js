@@ -30,7 +30,6 @@ const userService = {
             });
             return response.data;
         } catch (error) {
-            // Ném lỗi để component sử dụng có thể bắt được
             throw error.response?.data?.message || 'Lỗi khi lấy danh sách người dùng';
         }
     },
@@ -63,6 +62,21 @@ const userService = {
         }
     },
 
+    // Thêm method mới cho cập nhật profile
+    updateProfile: async (userID, profileData) => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.put(`${API_URL}${userID}/profile`, profileData, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            return response.data;
+        } catch (error) {
+            throw error.response?.data?.error || error.response?.data?.message || 'Lỗi khi cập nhật thông tin cá nhân';
+        }
+    },
+
     deleteUser: async (userID) => {
         try {
             const token = localStorage.getItem('token');
@@ -74,6 +88,40 @@ const userService = {
             return response.data;
         } catch (error) {
             throw error.response?.data?.error || error.response?.data?.message || 'Lỗi khi xóa người dùng';
+        }
+    },
+
+    // Upload avatar
+    uploadAvatar: async (userID, file) => {
+        try {
+            const token = localStorage.getItem('token');
+            const formData = new FormData();
+            formData.append('avatar', file);
+
+            const response = await axios.post(`${API_URL}${userID}/avatar`, formData, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            return response.data;
+        } catch (error) {
+            throw error.response?.data?.error || error.response?.data?.message || 'Lỗi khi upload ảnh đại diện';
+        }
+    },
+
+    // Delete avatar
+    deleteAvatar: async (userID) => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.delete(`${API_URL}${userID}/avatar`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            return response.data;
+        } catch (error) {
+            throw error.response?.data?.error || error.response?.data?.message || 'Lỗi khi xóa ảnh đại diện';
         }
     },
 

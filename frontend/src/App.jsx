@@ -28,29 +28,31 @@ const App = () => {
                 <Route path="/login" element={<LoginPage/>} />
                 <Route path="/" element={<Navigate to="/login" />} />
                 <Route element={<ProtectedRoute />}>
-                  <Route path="*" element={<MainLayout><DynamicRouter /></MainLayout>} />
+                  <Route path="*" element={
+                    <MainLayout>
+                      <DynamicRouter />
+
+                      {/* React Toastify Container */}
+                      <ToastContainer
+                        position="top-right"
+                        autoClose={3000}
+                        hideProgressBar={false}
+                        newestOnTop={false}
+                        closeOnClick
+                        rtl={false}
+                        pauseOnFocusLoss
+                        draggable
+                        pauseOnHover
+                        theme="light"
+                        className="custom-toast-container"
+                      />
+                    </MainLayout>} />
                   </Route>
               </Routes>
             </Router>
           </DocumentProvider>
         </UserProvider>
-        
-      </AuthProvider>
-      
-      {/* React Toastify Container */}
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-        className="custom-toast-container"
-      />
+      </AuthProvider>   
     </div>
   )
 }

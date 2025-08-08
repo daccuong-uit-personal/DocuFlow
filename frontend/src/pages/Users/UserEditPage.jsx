@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { CheckIcon, XMarkIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-toastify';
 import userService from '../../services/userService';
+import AvatarUpload from '../../components/User/AvatarUpload';
+import { useAuth } from '../../hooks/useAuth';
 
 // Component LoadingSpinner inline để tránh lỗi import
 const LoadingSpinner = ({ message = 'Đang tải...' }) => (
@@ -15,6 +17,7 @@ const LoadingSpinner = ({ message = 'Đang tải...' }) => (
 const UserEditPage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const { user: currentUser, updateUserAvatar } = useAuth();
 
   const [userInfo, setUserInfo] = useState({
     userName: '',
@@ -25,6 +28,7 @@ const UserEditPage = () => {
     gender: '',
     phoneNumber: '',
     address: '',
+    avatar: null,
   });
 
   const [departments, setDepartments] = useState([]);
@@ -61,6 +65,7 @@ const UserEditPage = () => {
           gender: user.gender || '',
           phoneNumber: user.phoneNumber || '',
           address: user.address || '',
+          avatar: user.avatar || null,
         });
 
         // Sử dụng dữ liệu thật từ database
@@ -83,6 +88,18 @@ const UserEditPage = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setUserInfo((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleAvatarUpdate = (updatedUser) => {
+    setUserInfo(prev => ({
+      ...prev,
+      avatar: updatedUser.avatar
+    }));
+
+    // Nếu đang chỉnh sửa chính tài khoản của mình, cập nhật navbar
+    if (currentUser && currentUser._id === id) {
+      updateUserAvatar(updatedUser);
+    }
   };
 
   const handleConfirm = async () => {
@@ -138,7 +155,8 @@ const UserEditPage = () => {
 
     } catch (err) {
       console.error('Lỗi khi cập nhật:', err);
-      toast.error(err.message || 'Có lỗi xảy ra khi cập nhật thông tin');
+      const errorMessage = err.response?.data?.message || err.message || 'Có lỗi xảy ra khi cập nhật thông tin';
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -179,14 +197,12 @@ const UserEditPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Ảnh đại diện */}
           <div className="md:col-span-1 flex flex-col items-center">
-            <img
-              src="https://placehold.co/150x150/cccccc/ffffff?text=AV"
-              alt="Ảnh đại diện"
-              className="w-36 h-36 rounded-full mb-4 object-cover"
+            <AvatarUpload
+              userId={id}
+              currentAvatar={userInfo.avatar}
+              onAvatarUpdate={handleAvatarUpdate}
+              size="large"
             />
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-150">
-              Thay đổi ảnh
-            </button>
           </div>
 
           {/* Thông tin người dùng */}
