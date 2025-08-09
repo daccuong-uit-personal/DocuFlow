@@ -40,13 +40,10 @@ exports.getUsers = async (queryOptions) => {
         if (isLocked) {
             query.isLocked = isLocked === 'true';
         }
-        if (role) {
-            const foundRole = await Role.findOne({ name: role });
-            if (foundRole) {
-                query.role = foundRole._id;
-            } else {
-                query.role = null;
-            }
+        if (role && role.length > 0) {
+            const foundRoles = await Role.find({ name: { $in: role } });
+            const roleIds = foundRoles.map(r => r._id);
+            query.role = { $in: roleIds };
         }
 
         if (departmentID) {
@@ -57,7 +54,6 @@ exports.getUsers = async (queryOptions) => {
                 query.departmentID = null;
             }
         }
-
         // Thực hiện truy vấn với populate để lấy thông tin chi tiết
         const users = await User.find(query)
             .populate('departmentID', 'name headOfDepartment viceHeadOfDepartment')

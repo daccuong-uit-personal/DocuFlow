@@ -3,36 +3,70 @@ const mongoose = require('mongoose');
 const constants = require('../constants/constants');
 const Schema = mongoose.Schema;
 
-const processingHistorySchema = new mongoose.Schema({
-    assignerId: {
+const processingAssignmentSchema = new mongoose.Schema({
+    userId: { // ID của người được giao việc
         type: Schema.Types.ObjectId,
         ref: 'User',
         required: true,
     },
-    assigneeId: [
-        {
-            type: Schema.Types.ObjectId,
-            ref: 'User',
-            required: true,
-        }
-    ],
-    action: {
+    role: { // Vai trò của người được giao việc (ví dụ: 'read', 'collaborate', 'inform')
         type: String,
-        enum: [constants.ACTIONS.DELEGATE, constants.ACTIONS.ADD_PROCESSOR, constants.ACTIONS.MARK_AS_COMPLETE, constants.ACTIONS.RECALL, constants.ACTIONS.UPDATE_PROCESSOR],
+        enum: ['read', 'collaborate', 'inform'],
         required: true,
     },
-    assignedAt: {
+    status: { // Trạng thái của nhiệm vụ (pending, completed, returned, rejected)
+        type: String,
+        enum: ['pending', 'completed', 'returned', 'rejected'],
+        default: 'pending',
+    },
+    assignedBy: { // ID của người đã giao việc
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+    },
+    assignedAt: { // Thời điểm được giao
         type: Date,
         default: Date.now,
     },
-    note: {
+    note: { // Ghi chú kèm theo khi giao việc
         type: String,
-        required: false,
     },
-    deadline: {
+    deadline: { // Hạn chót của nhiệm vụ
         type: Date,
+    },
+});
+
+const processingHistorySchema = new mongoose.Schema({
+    action: { // Hành động (ví dụ: 'assign', 'complete', 'return', 'recall')
+        type: String,
+        enum: [
+            constants.ACTIONS.DELEGATE,
+            constants.ACTIONS.ADD_PROCESSOR,
+            constants.ACTIONS.MARK_COMPLETE,
+            constants.ACTIONS.RECALL,
+            constants.ACTIONS.RETURN,
+        ],
         required: true,
-    }
+    },
+    actorId: { // ID của người thực hiện hành động
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+    },
+    timestamp: {
+        type: Date,
+        default: Date.now,
+    },
+    details: { // Chi tiết hành động (ví dụ: danh sách người được giao, lý do trả lại)
+        processors: [
+            {
+                userId: {
+                    type: Schema.Types.ObjectId,
+                    ref: 'User'
+                }
+            }
+        ],
+    },
 });
 
 const documentSchema = new Schema({
@@ -79,7 +113,8 @@ const documentSchema = new Schema({
     },
     confidentialityLevel: {
         type: String,
-        enum: [constants.CONFIDENTIALITY_LEVEL.NORMAL, constants.CONFIDENTIALITY_LEVEL.CONFIDENTIAL, constants.CONFIDENTIALITY_LEVEL.SECRET],
+        enum: [constants.CONFIDENTIALITY_LEVEL.NORMAL, constants.CONFIDENTIALITY_LEVEL.CONFIDENTIAL, 
+            constants.CONFIDENTIALITY_LEVEL.SECRET],
         default: constants.CONFIDENTIALITY_LEVEL.NORMAL
     },
     documentType: {
@@ -107,20 +142,24 @@ const documentSchema = new Schema({
     ],
     status: {
         type: String,
-        enum: [constants.DOCUMENT_STATUS.DRAFT, constants.DOCUMENT_STATUS.PROCESSING, constants.DOCUMENT_STATUS.COMPLETED, constants.DOCUMENT_STATUS.CANCELED],
-        default: constants.DOCUMENT_STATUS.DRAFT
+        enum: [
+            constants.DOCUMENT_STATUS.DRAFT,
+            constants.DOCUMENT_STATUS.PENDING_APPROVAL,
+            constants.DOCUMENT_STATUS.PROCESSING,
+            constants.DOCUMENT_STATUS.COMPLETED,
+            constants.DOCUMENT_STATUS.REJECTED,
+            constants.DOCUMENT_STATUS.CANCELED,
+            constants.DOCUMENT_STATUS.RETURNED,
+            constants.DOCUMENT_STATUS.RECALLED,
+        ],
+        default: constants.DOCUMENT_STATUS.DRAFT,
     },
     createdBy: {
         type: Schema.Types.ObjectId,
         ref: 'User',
         required: true
     },
-    assignedUsers: [
-        {
-            type: Schema.Types.ObjectId,
-            ref: 'User',
-        }
-    ],
+    assignedTo: [processingAssignmentSchema],
     processingHistory: [processingHistorySchema],
 });
 

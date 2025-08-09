@@ -5,12 +5,26 @@ import axios from 'axios';
 const API_URL = 'http://localhost:8000/api/users/';
 const DEPARTMENTS_API_URL = 'http://localhost:8000/api/departments/';
 const ROLES_API_URL = 'http://localhost:8000/api/roles/';
+const paramsSerializer = (params) => {
+    const parts = [];
+    for (const key in params) {
+        const value = params[key];
+        if (Array.isArray(value)) {
+            value.forEach(item => {
+                parts.push(`${key}=${encodeURIComponent(item)}`);
+            });
+        } else if (value !== null && value !== undefined && value !== '') {
+            parts.push(`${key}=${encodeURIComponent(value)}`);
+        }
+    }
+    return parts.join('&');
+};
 
 const userService = {
     getAllUsers: async (
         searchQuery = '',
         departmentID = '',
-        role = '',
+        role = [],
         gender = '',
         isLocked = ''
     ) => {
@@ -26,8 +40,10 @@ const userService = {
                     role: role,
                     gender: gender,
                     isLocked: isLocked
-                }
+                },
+                paramsSerializer: paramsSerializer
             });
+
             return response.data;
         } catch (error) {
             throw error.response?.data?.message || 'Lỗi khi lấy danh sách người dùng';

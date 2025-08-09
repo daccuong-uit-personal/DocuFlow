@@ -15,7 +15,12 @@ const DocumentDetailPage = () => {
 
     const [isProcessModalOpen, setIsProcessModalOpen] = useState(false);
 
-    const handleOpenProcessModal = () => setIsProcessModalOpen(true);
+    const [documentIdForModal, setDocumentIdForModal] = useState(null);
+
+    const handleOpenProcessModal = (docId) => {
+        setDocumentIdForModal(docId);
+        setIsProcessModalOpen(true);
+    };
     const handleCloseProcessModal = () => setIsProcessModalOpen(false);
 
     useEffect(() => {
@@ -45,7 +50,8 @@ const DocumentDetailPage = () => {
             <DocumentProcessPage
                 isOpen={isProcessModalOpen}
                 onClose={handleCloseProcessModal}
-                documentId={selectedDocument._id}
+                documentIds={documentIdForModal}
+                mode={'delegate'} // 'add', 'return', 'recall' hoặc 'complete'
             />
         </div>
     );
