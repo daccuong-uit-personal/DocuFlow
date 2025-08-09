@@ -12,7 +12,7 @@ export const UserProvider = ({ children }) => {
     const fetchUsers = useCallback(async (
             query = '',
             departmentID = '', 
-            role = '', 
+            role = [], 
             gender = '', 
             isLocked = ''
         ) => {

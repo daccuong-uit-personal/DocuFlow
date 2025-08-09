@@ -155,7 +155,7 @@ const DocumentFormPage = ({ initialData, isEditMode = false, onSave, onDelegateC
                         </button>
                     )}
                     {!isEditMode && (
-                        <button onClick={onDelegateClick}
+                        <button onClick={() => onDelegateClick(initialData.document._id)}
                             className="h-8 flex items-center px-8 py-2 text-xs font-medium text-white bg-gradient-to-tl from-sky-300 from-30% to-sky-500 border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50">
                             Chuyển xử lý
                         </button>

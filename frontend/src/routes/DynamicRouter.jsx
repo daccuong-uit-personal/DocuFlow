@@ -15,13 +15,18 @@ const DynamicRouter = () => {
   return (
     <Routes>
       {/* Routes công khai */}
+      {/* Routes quản lý văn bản */}
       <Route path="/documents" element={<DocumentListPage />} />
       <Route path="/documents/create" element={<DocumentCreatePage />} />
       <Route path="/documents/detail/:id" element={<DocumentDetailPage />} />
       <Route path="/documents/edit/:id" element={<DocumentEditPage />} />
-      <Route path="/documents/process:id" element={<DocumentProcessPage />} />
+
+      {/* Routes xử lý văn bản */}
+      <Route path="/documents/process" element={<DocumentProcessPage />} />
+
+      {/* Routes cá nhân */}
       <Route path="/profile" element={<ProfilePage />} />
-      
+
       {/* Routes chỉ dành cho admin */}
       <Route path="/users" element={
         <ProtectedUserRoute>
@@ -43,10 +48,11 @@ const DynamicRouter = () => {
           <UserEditPage />
         </ProtectedUserRoute>
       } />
-      
+
       {/* 404 Page */}
       <Route path="*" element={<div className="p-8 text-center text-gray-500">404 - Không tìm thấy trang.</div>} />
     </Routes>
   );
 }
+
 export default DynamicRouter;

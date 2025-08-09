@@ -18,9 +18,13 @@ module.exports = {
     },
     DOCUMENT_STATUS: {
         DRAFT: "Draft",
+        PENDING_APPROVAL: "PendingApproval",
         PROCESSING: "Processing",
         COMPLETED: "Completed",
-        CANCELED: "Canceled"
+        REJECTED: "Rejected",
+        CANCELED: "Canceled",
+        RETURNED: "Returned",
+        RECALLED: "Recalled",
     },
     RECEIVING_METHOD: {
         ONLINE: "Online",
@@ -37,11 +41,17 @@ module.exports = {
         SECRET: "Tối mật"
     },
     ACTIONS: {
-        DELEGATE: "delegate",
-        ADD_PROCESSOR: "addProcessor",
-        MARK_AS_COMPLETE: "markAsComplete",
-        RECALL: "recall",
-        UPDATE_PROCESSOR: 'updateProcessor',
-        RETURN: 'return'
-    }
+        DELEGATE: "delegate", // Chuyển giao hoàn toàn quyền xử lý
+        ADD_PROCESSOR: "addProcessor", // Thêm người phối hợp
+        MARK_COMPLETE: "markComplete", // Đánh dấu đã hoàn thành
+        RECALL: "recall", // Thu hồi văn bản
+        UPDATE_ASSIGNMENT: 'updateAssignment', // Cập nhật thông tin giao việc (ví dụ: deadline)
+        RETURN: 'return', // Trả lại văn bản cho người giao việc trước đó
+        REJECT: 'reject' // Từ chối phê duyệt văn bản
+    },
+    ASSIGNMENT_ROLES: {
+    MAIN_PROCESSOR: "mainProcessor", // Người xử lý chính
+    COORDINATOR: "coordinator", // Người phối hợp
+    INFORM_ONLY: "informOnly" // Chỉ nhận để biết
+}
 };

@@ -99,78 +99,101 @@ exports.deleteManyDocuments = async (req, res) => {
     }
 };
 
-// Chuyển xử lý văn bản cho người khác
-exports.delegateDocument = async (req, res) => {
+exports.processDocuments = async (req, res) => {
     try {
-        const documentId = req.params.id;
-        const assigneeId = req.body.assigneeId;
-        const note = req.body.note;
-        const deadline = req.body.deadline;
+        const { documentIds, processors, note, deadline } = req.body;
         const assignerId = req.user.id;
-        const action = req.body.action;
-        const assignerRoleName = req.user.roleName;
 
-        const updatedDocument = await DocumentService.delegateDocument(documentId, assignerId, assigneeId, note, deadline, assignerRoleName, action);
-        return res.status(200).json({ document: updatedDocument });
+        if (!documentIds || !Array.isArray(documentIds) || documentIds.length === 0) {
+            return res.status(400).json({ message: "Cần cung cấp ít nhất một ID văn bản." });
+        }
+        if (!processors || !Array.isArray(processors) || processors.length === 0) {
+            return res.status(400).json({ message: "Cần cung cấp ít nhất một người xử lý." });
+        }
+
+        const updatedDocuments = await DocumentService.processDocuments(documentIds, assignerId, processors, note, deadline);
+        return res.status(200).json({ documents: updatedDocuments });
     } catch (error) {
+        console.error("Lỗi trong controller processDocuments:", error);
         return res.status(400).json({ message: error.message });
     }
 };
 
-// Thêm người xử lý mới vào văn bản
-exports.addProcessor = async (req, res) => {
+// Controller để cập nhật người xử lý (thay thế người cũ bằng người mới)
+// Hàm này thay thế cho exports.updateProcessor cũ
+exports.updateProcessors = async (req, res) => {
     try {
-        const documentId = req.params.id;
-        const newProcessorId = req.body.newProcessorId;
-        const note = req.body.note;
+        const { documentIds, updates } = req.body;
         const assignerId = req.user.id;
-        const deadline = req.body.deadline;
 
-        const updatedDocument = await DocumentService.addProcessor(documentId, assignerId, newProcessorId, note, deadline);
-        return res.status(200).json({ document: updatedDocument });
+        if (!documentIds || !Array.isArray(documentIds) || documentIds.length === 0) {
+            return res.status(400).json({ message: "Cần cung cấp ít nhất một ID văn bản." });
+        }
+        if (!updates || !Array.isArray(updates) || updates.length === 0) {
+            return res.status(400).json({ message: "Cần cung cấp ít nhất một thay đổi." });
+        }
+
+        const updatedDocuments = await DocumentService.updateProcessors(documentIds, assignerId, updates);
+        return res.status(200).json({ documents: updatedDocuments });
     } catch (error) {
+        console.error("Lỗi trong controller updateProcessors:", error);
         return res.status(400).json({ message: error.message });
     }
 };
 
-// Đánh dấu văn bản đã hoàn thành
+// Controller để trả lại văn bản
+// Hàm này thay thế cho exports.returnDocument cũ
+exports.returnDocuments = async (req, res) => {
+    try {
+        const { documentIds, note } = req.body;
+        const assigneeId = req.user.id;
+
+        if (!documentIds || !Array.isArray(documentIds) || documentIds.length === 0) {
+            return res.status(400).json({ message: "Cần cung cấp ít nhất một ID văn bản." });
+        }
+
+        const updatedDocuments = await DocumentService.returnDocuments(documentIds, assigneeId, note);
+        return res.status(200).json({ documents: updatedDocuments });
+    } catch (error) {
+        console.error("Lỗi trong controller returnDocuments:", error);
+        return res.status(400).json({ message: error.message });
+    }
+};
+
+// Controller để đánh dấu văn bản đã hoàn thành
+// Hàm này thay thế cho exports.markAsComplete cũ
 exports.markAsComplete = async (req, res) => {
     try {
-        const documentId = req.params.id;
+        const { documentIds } = req.body;
         const processorId = req.user.id;
 
-        const updatedDocument = await DocumentService.markAsComplete(documentId, processorId);
-        return res.status(200).json({ document: updatedDocument });
+        if (!documentIds || !Array.isArray(documentIds) || documentIds.length === 0) {
+            return res.status(400).json({ message: "Cần cung cấp ít nhất một ID văn bản." });
+        }
+
+        const updatedDocuments = await DocumentService.markAsComplete(documentIds, processorId);
+        return res.status(200).json({ documents: updatedDocuments });
     } catch (error) {
+        console.error("Lỗi trong controller markAsComplete:", error);
         return res.status(400).json({ message: error.message });
     }
 };
 
-// Thu hồi văn bản
-exports.recallDocument = async (req, res) => {
+// Controller để thu hồi văn bản
+// Hàm này thay thế cho exports.recallDocument cũ
+exports.recallDocuments = async (req, res) => {
     try {
-        const documentId = req.params.id;
+        const { documentIds } = req.body;
         const requesterId = req.user.id;
-        const requesterRoleName = req.user.roleName;
 
-        const updatedDocument = await DocumentService.recallDocument(documentId, requesterId, requesterRoleName);
-        return res.status(200).json({ document: updatedDocument });
+        if (!documentIds || !Array.isArray(documentIds) || documentIds.length === 0) {
+            return res.status(400).json({ message: "Cần cung cấp ít nhất một ID văn bản." });
+        }
+
+        const updatedDocuments = await DocumentService.recallDocuments(documentIds, requesterId);
+        return res.status(200).json({ documents: updatedDocuments });
     } catch (error) {
-        return res.status(400).json({ message: error.message });
-    }
-};
-
-exports.updateProcessor = async (req, res) => {
-    try {
-        const documentId = req.params.id;
-        const newAssigneeId = req.body.newAssigneeId;
-        const note = req.body.note;
-        const deadline = req.body.deadline;
-        const assignerId = req.user.id;
-
-        const updatedDocument = await DocumentService.updateProcessor(documentId, assignerId, newAssigneeId, note, deadline);
-        return res.status(200).json({ document: updatedDocument });
-    } catch (error) {
+        console.error("Lỗi trong controller recallDocuments:", error);
         return res.status(400).json({ message: error.message });
     }
 };
