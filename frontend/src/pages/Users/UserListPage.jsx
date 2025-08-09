@@ -1,4 +1,3 @@
-
 // Trang danh sách người dùng
 
 import React, { useState, useEffect } from 'react';
@@ -120,12 +119,14 @@ const UserListPage = () => {
 
   const [showFilterPanel, setShowFilterPanel] = useState(false);
 
-
   // States cho modal xóa
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [selectedUserIds, setSelectedUserIds] = useState([]);
+
+  // State cho toggle lock
+  const [lockingUserId, setLockingUserId] = useState(null);
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
@@ -199,6 +200,28 @@ const UserListPage = () => {
     setShowDeleteModal(true);
   };
 
+  // Thêm hàm mới để xử lý toggle lock
+  const handleToggleLock = async (user) => {
+    try {
+      setLockingUserId(user._id);
+      
+      const response = await userService.toggleLockStatus(user._id);
+      
+      // Hiển thị thông báo thành công
+      const action = response.user.isLocked ? 'Khóa' : 'Mở khóa';
+      toast.success(`${action} tài khoản thành công!`);
+      
+      // Refresh danh sách người dùng
+      await fetchUsers(searchQuery, filterDepartment, filterRole, filterGender, filterIsLocked);
+      
+    } catch (error) {
+      console.error('Lỗi khi toggle lock:', error);
+      toast.error(error || 'Có lỗi xảy ra khi thay đổi trạng thái tài khoản');
+    } finally {
+      setLockingUserId(null);
+    }
+  };
+
   const handleConfirmDelete = async () => {
     if (!userToDelete) return;
 
@@ -229,7 +252,6 @@ const UserListPage = () => {
     if (!isDeleting) {
       setShowDeleteModal(false);
       setUserToDelete(null);
-
     }
   };
 
@@ -268,7 +290,6 @@ const UserListPage = () => {
       console.log('Không có người dùng nào được chọn để xóa.');
     }
   };
-
 
   return (
     <div className="bg-gray-100 min-h-full font-sans">
@@ -376,10 +397,12 @@ const UserListPage = () => {
             onRowView={handleViewUser}
             onRowEdit={handleEditUser}
             onRowDelete={handleDeleteUser}
+            onRowToggleLock={handleToggleLock}
             onRowClick={handleViewUser}
             selectedItems={selectedUserIds}
             onSelectAll={handleSelectAll}
             onSelectOne={handleSelectOne}
+            lockingUserId={lockingUserId}
           />
         </div>
 

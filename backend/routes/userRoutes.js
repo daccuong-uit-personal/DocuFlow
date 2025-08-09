@@ -11,7 +11,8 @@ const {
     deleteUser,
     transferUser,
     uploadAvatar,
-    deleteAvatar
+    deleteAvatar,
+    toggleLockStatus
 } = require("../controllers/userController");
 
 const { authenticateToken, authorizePermissions } = require("../middlewares/authMiddleware");
@@ -35,6 +36,13 @@ router.route("/:id/avatar").delete(
     authenticateToken,
     authorizePermissions(['user:update']),
     deleteAvatar
+);
+
+// Thêm route mới cho toggle lock status
+router.route("/:id/toggle-lock").put(
+    authenticateToken,
+    authorizePermissions(['user:update']),
+    toggleLockStatus
 );
 
 module.exports = router;

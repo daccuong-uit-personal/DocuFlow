@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { User, Lock, LogIn, Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-hot-toast';
+import { toast } from 'react-toastify';
 import { useAuth } from '../../hooks/useAuth';
 
 // Định nghĩa các biến thể cho animation
@@ -52,7 +52,25 @@ const LoginForm = () => {
       }, 1000);
     } catch (err) {
       // Xử lý lỗi từ backend
-      setError('Tên đăng nhập hoặc mật khẩu không đúng!');
+      console.error('Login error:', err);
+      
+      // Kiểm tra loại lỗi để hiển thị thông báo phù hợp
+      let errorMessage = 'Đã xảy ra lỗi không xác định!';
+      
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      // Hiển thị toast cho lỗi tài khoản bị khóa
+      if (errorMessage === 'Tài khoản này đã bị khóa!') {
+        toast.error(errorMessage);
+        setError(errorMessage);
+      } else {
+        setError('Tên đăng nhập hoặc mật khẩu không đúng!');
+      }
+      
       setIsLoading(false);
     }
   };
@@ -131,7 +149,9 @@ const LoginForm = () => {
         
         {/* Hiển thị thông báo lỗi */}
         {error ? (
-          <p className="text-red-500 text-xs font-medium">{error}</p>
+          <p className={`text-xs font-medium ${error === 'Tài khoản này đã bị khóa!' ? 'text-orange-600' : 'text-red-500'}`}>
+            {error}
+          </p>
         ) : (
           <p className="text-red-500 text-xs font-medium opacity-0">h</p>
         )}

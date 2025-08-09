@@ -301,3 +301,47 @@ exports.transferUser = async (userId, newDepartmentID, requester) => {
         throw error;
     }
 };
+
+// Thêm hàm mới để toggle lock status
+exports.toggleUserLockStatus = async (userId, requester) => {
+    try {
+        const user = await User.findById(userId).populate('role');
+        if (!user) {
+            throw new Error('Không tìm thấy người dùng!');
+        }
+
+        // Kiểm tra không được khóa tài khoản admin
+        if (user.role?.name === 'admin') {
+            throw new Error('Không thể khóa tài khoản admin!');
+        }
+
+        // Kiểm tra quyền thực hiện (chỉ admin mới được khóa/mở khóa tài khoản)
+        if (requester) {
+            const requesterUser = await User.findById(requester.id).populate('role');
+            if (!requesterUser || requesterUser.role?.name !== 'admin') {
+                throw new Error('Chỉ admin mới có quyền khóa/mở khóa tài khoản người dùng.');
+            }
+        }
+
+        // Toggle trạng thái isLocked
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            {
+                isLocked: !user.isLocked,
+                updateAt: new Date()
+            },
+            { new: true }
+        )
+            .populate('role', 'name description')
+            .populate('departmentID', 'name');
+
+        if (!updatedUser) {
+            throw new Error('Cập nhật trạng thái khóa thất bại.');
+        }
+
+        return updatedUser;
+    } catch (error) {
+        console.error("Lỗi khi toggle lock status:", error);
+        throw error;
+    }
+};

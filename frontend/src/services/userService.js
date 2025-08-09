@@ -125,6 +125,21 @@ const userService = {
         }
     },
 
+    // Thêm API mới để toggle lock status
+    toggleLockStatus: async (userID) => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.put(`${API_URL}${userID}/toggle-lock`, {}, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            return response.data;
+        } catch (error) {
+            throw error.response?.data?.error || error.response?.data?.message || 'Lỗi khi thay đổi trạng thái khóa tài khoản';
+        }
+    },
+
     // API để lấy danh sách departments từ database
     getDepartments: async () => {
         try {

@@ -1,18 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-
 import {
   PencilSquareIcon,
   TrashIcon,
-  EyeIcon,
   ArrowUpIcon,
   ArrowDownIcon,
 } from '@heroicons/react/24/outline';
+import { LockClosedIcon, LockOpenIcon } from '@heroicons/react/24/solid';
 import { formatDate } from '../../utils/helper';
 
 // Reusable DataTable component
-const DataTable = ({ data, columns, onRowView, onRowEdit, onRowDelete, onRowClick, selectedItems, onSelectOne, onSelectAll }) => {
+const DataTable = ({ data, columns, onRowView, onRowEdit, onRowDelete, onRowClick, selectedItems, onSelectOne, onSelectAll, onRowToggleLock, lockingUserId 
+}) => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
 
   const navigate = useNavigate();
@@ -47,7 +47,6 @@ const DataTable = ({ data, columns, onRowView, onRowEdit, onRowDelete, onRowClic
     }
     return 0;
   });
-
 
   // Function to request a new sort
   const requestSort = (key) => {
@@ -139,14 +138,25 @@ const DataTable = ({ data, columns, onRowView, onRowEdit, onRowDelete, onRowClic
                   <div className="h-[40px] overflow-y-auto">
                     {column.key === 'action' ? (
                       <div className="flex items-center justify-center space-x-2" onClick={(e) => e.stopPropagation()}>
-                        {onRowView && (
-                          <button onClick={() => onRowView(item)} className="text-blue-500 hover:text-blue-700">
-                            <EyeIcon className="h-5 w-5" />
-                          </button>
-                        )}
                         {onRowEdit && (
                           <button onClick={() => onRowEdit(item)} className="text-gray-500 hover:text-gray-700">
                             <PencilSquareIcon className="h-5 w-5" />
+                          </button>
+                        )}
+                        {onRowToggleLock && (
+                          <button 
+                            onClick={() => onRowToggleLock(item)} 
+                            className={`${item.isLocked ? 'text-red-500 hover:text-red-700' : 'text-green-500 hover:text-green-700'} ${lockingUserId === item._id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            disabled={lockingUserId === item._id || item.role?.name === 'admin'}
+                            title={item.role?.name === 'admin' ? 'Không thể khóa tài khoản admin' : (item.isLocked ? 'Mở khóa tài khoản' : 'Khóa tài khoản')}
+                          >
+                            {lockingUserId === item._id ? (
+                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-current"></div>
+                            ) : item.isLocked ? (
+                              <LockClosedIcon className="h-5 w-5" />
+                            ) : (
+                              <LockOpenIcon className="h-5 w-5" />
+                            )}
                           </button>
                         )}
                         {onRowDelete && (
@@ -163,10 +173,18 @@ const DataTable = ({ data, columns, onRowView, onRowEdit, onRowDelete, onRowClic
                       >
                         {item[column.key]}
                       </span>
+                    ) : (column.key === 'isLocked') ? (
+                      <span className={`px-2 py-1 inline-flex text-xs leading-4 font-semibold rounded-full ${
+                        item[column.key] ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                      }`}>
+                        {item[column.key] ? 'Đã khóa' : 'Bình thường'}
+                      </span>
                     ) : (column.key === 'recivedDate' || column.key === 'recordedDate' || column.key === 'dueDate') ? (
                       formatDate(item[column.key])
+                    ) : (column.key === 'dayOfBirth') ? (
+                      formatDate(item[column.key])
                     ) : (column.key === 'departmentID' || column.key === 'role') ? (
-                      item[column.key]?.name
+                      column.render ? column.render(item[column.key]) : item[column.key]?.name
                     ) : (
                       item[column.key]
                     )}
