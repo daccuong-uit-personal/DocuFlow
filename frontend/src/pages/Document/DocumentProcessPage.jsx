@@ -12,7 +12,7 @@ import { toast } from 'react-toastify';
 // Map vai trò sang tiếng Việt để hiển thị
 const roleMapping = {
     delegate: 'Chuyển xử lý',
-    add: 'Thêm người xử lý',
+    add: 'Thêm sửa xử lý',
     return: 'Trả lại',
     complete: 'Hoàn thành xử lý',
     recall: 'Thu hồi',
@@ -129,12 +129,8 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, }) => {
                         setIsLoading(false);
                         return;
                     }
-                    const updates = {
-                        processors: addedProcessors,
-                        note: note,
-                        deadline: deadline
-                    };
-                    await updateProcessors(finalDocumentIds, updates);
+
+                    await updateProcessors(finalDocumentIds, addedProcessors, note, deadline);
                     break;
                 case 'return':
                     // Trả lại văn bản về cho người giao trước đó, kèm lý do

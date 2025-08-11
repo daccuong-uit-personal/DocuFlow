@@ -100,14 +100,16 @@ export const DocumentProvider = ({ children }) => {
         try {
             const document = await documentService.getDocumentById(id);
             setSelectedDocument(document);
+            return document;
         } catch (err) {
             setError(err.message || 'Không tìm thấy văn bản.');
-            console.error("Failed to fetch document by ID:", err);
             setSelectedDocument(null);
+            throw err;
         } finally {
             setLoading(false);
         }
     }, []);
+
 
     // Hàm updateDocument cũ đã được đổi tên để tránh nhầm lẫn
     const updateDocumentDetails = useCallback(async (id, updatedData) => {
@@ -153,10 +155,10 @@ export const DocumentProvider = ({ children }) => {
         );
     }, [handleApiCall]);
 
-    const updateProcessors = useCallback(async (documentIds, updates) => {
+    const updateProcessors = useCallback(async (documentIds, assignerId, processors, note, deadline) => {
         return handleApiCall(
             documentService.updateProcessors,
-            [documentIds, updates],
+            [documentIds, assignerId, processors, note, deadline],
             'Cập nhật người xử lý thành công!'
         );
     }, [handleApiCall]);

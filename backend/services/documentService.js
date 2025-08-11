@@ -111,7 +111,7 @@ exports.deleteManyDocuments = async (documentIds) => {
     }
 };
 
-exports.searchAndFilterDocuments = async (queryOptions, userId) => {
+exports.searchAndFilterDocuments = async (queryOptions, user) => {
     try {
         const {
             searchText,
@@ -134,8 +134,8 @@ exports.searchAndFilterDocuments = async (queryOptions, userId) => {
 
         let query = {};
 
-        if (userId) {
-            query['assignedTo.userId'] = userId;
+        if (user && user.roleName !== 'admin') {
+            query['assignedTo.userId'] = user.id;
         }
 
         if (searchText) {
@@ -287,58 +287,6 @@ exports.processDocuments = async (documentIds, assignerId, processors, note, dea
 
     return updatedDocuments;
 };
-
-// exports.processDocuments = async (documentIds, assignerId, processors, note, deadline) => {
-//     const documents = await Document.find({ _id: { $in: documentIds } });
-//     if (!documents || documents.length === 0) {
-//         throw new Error('Không tìm thấy văn bản nào.');
-//     }
-
-//     const updatedDocuments = [];
-
-//     for (const doc of documents) {
-//         const currentAssignment = doc.assignedTo.find(
-//             a => a.userId.toString() === assignerId.toString() && a.status === 'pending'
-//         );
-
-//         if (!currentAssignment && doc.createdBy.toString() !== assignerId.toString()) {
-//             throw new Error(`Bạn không có quyền xử lý văn bản có ID: ${doc._id}.`);
-//         }
-
-//         const newAssignments = processors.map(processor => ({
-//             userId: processor.userId,
-//             role: processor.role,
-//             note: note,
-//             deadline: deadline,
-//             assignedBy: assignerId,
-//             status: 'pending'
-//         }));
-
-//         // Thêm người xử lý mới
-//         doc.assignedTo.push(...newAssignments);
-
-//         // Đánh dấu nhiệm vụ hiện tại đã hoàn thành nếu đây là hành động DELEGATE
-//         const isDelegateAction = processors.some(p => p.role === 'read');
-//         if (isDelegateAction && currentAssignment) {
-//             currentAssignment.status = 'completed';
-//         }
-
-//         // Ghi lại lịch sử
-//         doc.processingHistory.push(createHistoryEntry(
-//             isDelegateAction ? constants.ACTIONS.DELEGATE : constants.ACTIONS.ADD_PROCESSOR,
-//             assignerId,
-//             { processors: newAssignments, note: note }
-//         ));
-
-//         // Cập nhật trạng thái tổng thể của văn bản
-//         doc.status = constants.DOCUMENT_STATUS.PROCESSING;
-
-//         await doc.save();
-//         updatedDocuments.push(doc);
-//     }
-
-//     return updatedDocuments;
-// };
 
 exports.updateProcessors = async (documentIds, assignerId, updates) => {
     const note = updates.note || "Cập nhật người xử lý.";

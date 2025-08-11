@@ -5,7 +5,7 @@ const getActionLabel = (action) => {
     switch (action) {
         case 'delegate':
             return 'Chuyển xử lý';
-        case 'add-processor':
+
         case 'addProcessor':
             return 'Thêm người xử lý';
         case 'update-processor':

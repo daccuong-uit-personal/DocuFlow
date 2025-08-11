@@ -1,6 +1,6 @@
 // Định nghĩa các hằng số (ROLES, DOCUMENT_STATUS, PERMISSIONS_LIST)
 
-const CONSTANTS = {
+const constants = {
     ROLES: {
         ADMIN: "admin",
         GIAM_DOC: "giam_doc",
@@ -51,4 +51,4 @@ const CONSTANTS = {
     },
 };
 
-export default CONSTANTS;
+export default constants;

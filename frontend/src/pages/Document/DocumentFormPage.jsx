@@ -4,11 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import AttachmentsList from '../../components/common/AttachmentsList'
 import TransferHistoryTable from '../../components/common/TransferHistoryTable';
 import { formatDate, formatDateToInput } from '../../utils/helper';
+import AssignedUsersList from '../../components/common/AssignedUsersList';
 
 const DocumentFormPage = ({ initialData, isEditMode = false, onSave, onProcessClick }) => {
     const navigate = useNavigate();
-    
-    // Hàm xử lý khi bấm nút "Chỉnh sửa"
 
     const [formData, setFormData] = useState(
         (initialData?.document)
@@ -158,7 +157,7 @@ const DocumentFormPage = ({ initialData, isEditMode = false, onSave, onProcessCl
                         <>
                             <button onClick={() => onProcessClick(initialData.document._id, 'add')}
                                 className="h-8 flex items-center px-4 py-2 text-xs font-medium text-white bg-gradient-to-tl from-sky-300 from-30% to-sky-500 border border-gray-300 rounded-lg shadow-sm hover:bg-green-600">
-                                Thêm người xử lý
+                                Thêm sửa xử lý
                             </button>
                             <button onClick={() => onProcessClick(initialData.document._id, 'delegate')}
                                 className="h-8 flex items-center px-4 py-2 text-xs font-medium text-white bg-gradient-to-tl from-sky-300 from-30% to-sky-500 border border-gray-300 rounded-lg shadow-sm hover:bg-blue-600">
@@ -283,6 +282,10 @@ const DocumentFormPage = ({ initialData, isEditMode = false, onSave, onProcessCl
                         </div>
                     </div>
                 </div>
+
+                {!isEditMode && initialData?.document?.assignedTo && (
+                    <AssignedUsersList assignedTo={initialData.document.assignedTo} />
+                )}
 
                 {!isEditMode && initialData?.document?.processingHistory && (
                     <TransferHistoryTable history={initialData.document.processingHistory} />
