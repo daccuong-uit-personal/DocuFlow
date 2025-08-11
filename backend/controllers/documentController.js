@@ -25,6 +25,7 @@ exports.createDocument = async (req, res) => {
 exports.getDocuments = async (req, res) => {
     try {
         const queryOptions = req.query;
+
         const user = req.user;
 
         if (queryOptions.recivedDateFrom) {
@@ -87,10 +88,10 @@ exports.deleteManyDocuments = async (req, res) => {
             return res.status(400).json({ message: "Thiếu chuỗi IDs." });
         }
 
-        const idsArray = ids.split(','); 
+        const idsArray = ids.split(',');
 
         if (idsArray.length === 0) {
-             return res.status(400).json({ message: "Chuỗi IDs không hợp lệ." });
+            return res.status(400).json({ message: "Chuỗi IDs không hợp lệ." });
         }
 
         const result = await DocumentService.deleteManyDocuments(idsArray);

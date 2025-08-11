@@ -7,6 +7,7 @@ import { useAuth } from '../../hooks/useAuth';
 
 import CONSTANTS from '../../utils/constants';
 import roleHierarchy from '../../utils/roleFlow';
+import { toast } from 'react-toastify';
 
 // Map vai trò sang tiếng Việt để hiển thị
 const roleMapping = {
@@ -93,7 +94,8 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, }) => {
             switch (mode) {
                 case 'delegate':
                     if (selectedUsers.length === 0) {
-                        alert("Vui lòng chọn ít nhất một người để chuyển xử lý.");
+                        toast.warn("Vui lòng chọn ít nhất một người để chuyển xử lý.");
+                        setIsLoading(false);
                         return;
                     }
                     const delegatedProcessors = selectedUsers.map(u => ({
@@ -104,17 +106,17 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, }) => {
                     })).filter(p => p.role);
 
                     if (delegatedProcessors.length === 0) {
-                        alert("Vui lòng chọn ít nhất một vai trò cho người được chuyển.");
+                        toast.warn("Vui lòng chọn ít nhất một vai trò cho người được chuyển.");
+                        setIsLoading(false);
                         return;
                     }
-
-                    
 
                     await processDocuments(finalDocumentIds, delegatedProcessors, note, deadline);
                     break;
                 case 'add':
                     if (selectedUsers.length === 0) {
-                        alert("Vui lòng chọn ít nhất một người để thêm vào xử lý.");
+                        toast.warn("Vui lòng chọn ít nhất một người để thêm vào xử lý.");
+                        setIsLoading(false);
                         return;
                     }
                     const addedProcessors = selectedUsers.map(u => ({
@@ -123,14 +125,16 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, }) => {
                     })).filter(p => p.role);
 
                     if (addedProcessors.length === 0) {
-                        alert("Vui lòng chọn ít nhất một vai trò cho người được thêm.");
+                        toast.warn("Vui lòng chọn ít nhất một vai trò cho người được thêm.");
+                        setIsLoading(false);
                         return;
                     }
+
                     await updateProcessors(finalDocumentIds, addedProcessors, note, deadline);
                     break;
                 case 'return':
-                    // Sửa lỗi ở đây: Sử dụng hàm returnDocuments từ context
-                    await returnDocuments(documentIds, note);
+                    // Trả lại văn bản về cho người giao trước đó, kèm lý do
+                    await returnDocuments(finalDocumentIds, note);
                     break;
                 case 'recall':
                     // Sửa lỗi ở đây: Sử dụng hàm recallDocuments từ context
@@ -144,11 +148,11 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, }) => {
                     console.error("Chế độ không hợp lệ.");
                     break;
             }
-            alert(`${title} thành công!`);
+            toast.success(`${title} thành công!`);
             onClose();
         } catch (error) {
             console.error(`Lỗi khi thực hiện ${title}:`, error);
-            alert(`Lỗi khi thực hiện ${title}. Vui lòng thử lại.`);
+            toast.error(`Lỗi khi thực hiện ${title}. Vui lòng thử lại.`);
         } finally {
             setIsLoading(false);
         }

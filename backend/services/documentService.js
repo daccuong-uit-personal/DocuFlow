@@ -137,7 +137,7 @@ exports.searchAndFilterDocuments = async (queryOptions, user) => {
         if (user && user.roleName !== 'admin') {
             query['assignedTo.userId'] = user.id;
         }
-        
+
         if (searchText) {
             const searchRegex = new RegExp(searchText, 'i');
             query.$or = [
@@ -263,10 +263,10 @@ exports.processDocuments = async (documentIds, assignerId, processors, note, dea
         if (!currentAssignment && doc.createdBy.toString() !== assignerId.toString()) {
             throw new Error(`Bạn không có quyền xử lý văn bản có ID: ${doc._id}.`);
         }
-        
+
         // Cập nhật danh sách assignedTo
         doc.assignedTo = updateOrCreateAssignments(doc.assignedTo, processors, assignerId, note, deadline);
-        
+
         // Cập nhật trạng thái của người ủy quyền (nếu có)
         const isDelegateAction = processors.some(p => p.role === 'read');
         if (isDelegateAction && currentAssignment) {
@@ -304,23 +304,49 @@ exports.returnDocuments = async (documentIds, assigneeId, note) => {
 
     const updatedDocuments = [];
     for (const doc of documents) {
-        const currentAssignment = doc.assignedTo.find(
+        // Tìm nhiệm vụ của người đang thực hiện hành động trả lại
+        const assignmentToReturn = doc.assignedTo.find(
             a => a.userId.toString() === assigneeId.toString() && a.status === 'pending'
         );
-        if (!currentAssignment) {
+
+        if (!assignmentToReturn) {
             throw new Error(`Bạn không có nhiệm vụ đang chờ xử lý với văn bản có ID: ${doc._id}.`);
         }
 
-        currentAssignment.status = 'returned';
+        // Lấy ID của người đã giao việc TRƯỚC KHI xóa
+        const previousAssignerId = assignmentToReturn.assignedBy;
 
-        // Ghi lại lịch sử
+        // Lọc và xóa assignment của người trả lại khỏi mảng
+        // Tạo một mảng assignedTo mới không chứa assignment của người vừa trả lại
+        doc.assignedTo = doc.assignedTo.filter(
+            a => a._id.toString() !== assignmentToReturn._id.toString()
+        );
+
+        // Ghi lại lịch sử (hành động này vẫn giữ nguyên)
         doc.processingHistory.push(createHistoryEntry(
             constants.ACTIONS.RETURN,
             assigneeId,
             { note: note }
         ));
 
-        doc.status = constants.DOCUMENT_STATUS.RETURNED;
+        // Gán lại nhiệm vụ cho người đã giao trước đó với trạng thái 'rejected'
+        if (previousAssignerId) {
+            doc.assignedTo.push({
+                userId: previousAssignerId,
+                role: 'read', // hoặc vai trò gốc của người đó
+                status: 'rejected', // Trạng thái 'bị trả lại'
+                assignedBy: assigneeId,
+                note: note || 'Văn bản bị trả lại',
+                deadline: null
+            });
+        }
+
+        // Cập nhật các thông tin khác của văn bản
+        doc.lastReturnReason = note || '';
+        doc.lastReturnedBy = assigneeId;
+        doc.lastReturnedAt = new Date();
+        doc.status = constants.DOCUMENT_STATUS.REJECTED;
+
         await doc.save();
         updatedDocuments.push(doc);
     }

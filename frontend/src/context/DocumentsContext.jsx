@@ -20,7 +20,8 @@ export const DocumentProvider = ({ children }) => {
         setLoading(true);
         setError(null);
         try {
-            const updatedDocuments = await apiCall(...args);
+            const response = await apiCall(...args);
+            const updatedDocuments = response?.documents || response || [];
 
             // THÊM BƯỚC KIỂM TRA ĐẦU VÀO VÀ ĐỊNH DẠNG LẠI DỮ LIỆU TẠI ĐÂY
             let processedDocuments = updatedDocuments;
@@ -146,10 +147,10 @@ export const DocumentProvider = ({ children }) => {
     };
 
     // --- Các hàm mới sử dụng handleApiCall và trả về mảng ID ---
-    const processDocuments = useCallback(async (documentIds, assignerId, processors, note, deadline) => {
+    const processDocuments = useCallback(async (documentIds, processors, note, deadline) => {
         return handleApiCall(
             documentService.processDocuments,
-            [documentIds, assignerId, processors, note, deadline],
+            [documentIds, processors, note, deadline],
             'Chuyển xử lý văn bản thành công!'
         );
     }, [handleApiCall]);

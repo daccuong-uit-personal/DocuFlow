@@ -5,15 +5,18 @@ const getActionLabel = (action) => {
     switch (action) {
         case 'delegate':
             return 'Chuyển xử lý';
+
         case 'addProcessor':
             return 'Thêm người xử lý';
         case 'update-processor':
+        case 'updateAssignment':
             return 'Cập nhật người xử lý';
         case 'return':
             return 'Trả lại';
         case 'recall':
             return 'Thu hồi';
         case 'mark-complete':
+        case 'markComplete':
             return 'Hoàn thành';
         default:
             return 'Không xác định';
@@ -24,9 +27,12 @@ const getActionColor = (action) => {
     switch (action) {
         case 'delegate':
         case 'add-processor':
+        case 'addProcessor':
         case 'update-processor':
+        case 'updateAssignment':
             return 'bg-indigo-100 text-indigo-800';
         case 'mark-complete':
+        case 'markComplete':
             return 'bg-green-100 text-green-800';
         case 'return':
         case 'recall':
@@ -87,9 +93,9 @@ const ProcessingHistoryTable = ({ history = [] }) => {
                                     {item.actorId?.name}
                                 </td>
                                 <td className="w-40 px-2 py-4 text-sm text-gray-500 truncate">
-                                    {item.details.processors && item.details.processors.length > 0
+                                    {item.details && item.details.processors && item.details.processors.length > 0
                                         ? item.details.processors.map(p => p.userId?.name).join(', ')
-                                        : item.details.assigneeId?.name || 'N/A'
+                                        : item.details?.assigneeId?.name || 'N/A'
                                     }
                                 </td>
                                 <td className="w-32 px-2 py-4 text-sm text-gray-500 truncate">
@@ -97,7 +103,7 @@ const ProcessingHistoryTable = ({ history = [] }) => {
                                 </td>
                                 <td className="w-auto px-2 py-4 text-sm text-gray-500">
                                     <div className="truncate w-full max-w-xs">
-                                        {item.details.note || 'Không có ghi chú'}
+                                        {item.details?.note || 'Không có ghi chú'}
                                     </div>
                                 </td>
                             </tr>
