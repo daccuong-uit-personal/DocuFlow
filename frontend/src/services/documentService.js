@@ -113,16 +113,17 @@ const documentService = {
     },
 
     // Hàm cập nhật người xử lý (thay thế người cũ bằng người mới)
-    updateProcessors: async (documentIds, updates) => {
+    updateProcessors: async (documentIds, processors, note, deadline) => {
         try {
             const token = localStorage.getItem('token');
             const response = await axios.put(`${API_DOCUMENTS}update-processors`, {
                 documentIds,
-                updates
+                processors,
+                note,
+                deadline
             }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            console.log( "updateProcessors",response.data);
             return response.data;
         } catch (error) {
             console.error('Lỗi khi cập nhật người xử lý:', error);

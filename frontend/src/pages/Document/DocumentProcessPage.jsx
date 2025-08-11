@@ -11,7 +11,7 @@ import roleHierarchy from '../../utils/roleFlow';
 // Map vai trò sang tiếng Việt để hiển thị
 const roleMapping = {
     delegate: 'Chuyển xử lý',
-    add: 'Thêm người xử lý',
+    add: 'Thêm sửa xử lý',
     return: 'Trả lại',
     complete: 'Hoàn thành xử lý',
     recall: 'Thu hồi',
@@ -88,6 +88,7 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, }) => {
 
     const handleAction = async () => {
         setIsLoading(true);
+        const finalDocumentIds = Array.isArray(documentIds) ? documentIds : [documentIds];
         try {
             switch (mode) {
                 case 'delegate':
@@ -106,8 +107,8 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, }) => {
                         alert("Vui lòng chọn ít nhất một vai trò cho người được chuyển.");
                         return;
                     }
+
                     
-                    const finalDocumentIds = Array.isArray(documentIds) ? documentIds : [documentIds];
 
                     await processDocuments(finalDocumentIds, delegatedProcessors, note, deadline);
                     break;
@@ -119,15 +120,13 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, }) => {
                     const addedProcessors = selectedUsers.map(u => ({
                         userId: u._id,
                         role: userRoles[u._id],
-                        status: 'pending',
-                        deadline: deadline,
                     })).filter(p => p.role);
+
                     if (addedProcessors.length === 0) {
                         alert("Vui lòng chọn ít nhất một vai trò cho người được thêm.");
                         return;
                     }
-                    // Sửa lỗi ở đây: Sử dụng hàm updateProcessors từ context
-                    await updateProcessors(documentIds, addedProcessors, note, deadline);
+                    await updateProcessors(finalDocumentIds, addedProcessors, note, deadline);
                     break;
                 case 'return':
                     // Sửa lỗi ở đây: Sử dụng hàm returnDocuments từ context
