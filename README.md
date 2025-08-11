@@ -1,7 +1,3 @@
-Here’s your full **README.md** content, packaged so you can copy it in one go and save directly as `README.md`:
-
----
-
 # 📄 DocuFlow
 
 **DocuFlow** is a document workflow management tool designed for organizations to efficiently handle incoming documents.
@@ -123,3 +119,4 @@ No specific license yet. Consider adding a `LICENSE` file (e.g., MIT License) to
 * **Author**: *Nguyen Dac Cuong*
 * **Email**: *[nguyendaccuong1103@gmail.com](mailto:nguyendaccuong1103@gmail.com)*
 * **GitHub**: [daccuong-uit-personal/DocuFlow](https://github.com/daccuong-uit-personal/DocuFlow)
+
