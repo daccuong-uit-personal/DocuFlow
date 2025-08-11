@@ -17,11 +17,19 @@ const DocumentDetailPage = () => {
 
     const [documentIdForModal, setDocumentIdForModal] = useState(null);
 
-    const handleOpenProcessModal = (docId) => {
+    const [modalMode, setModalMode] = useState('add');
+
+    const handleOpenProcessModal = (docId, mode) => {
         setDocumentIdForModal(docId);
+        setModalMode(mode);
         setIsProcessModalOpen(true);
     };
-    const handleCloseProcessModal = () => setIsProcessModalOpen(false);
+
+    const handleCloseProcessModal = () => {
+        setIsProcessModalOpen(false);
+        setDocumentIdForModal(null);
+        setModalMode('');
+    };
 
     useEffect(() => {
         if (id) {
@@ -44,14 +52,14 @@ const DocumentDetailPage = () => {
             <DocumentFormPage
                 initialData={selectedDocument}
                 isEditMode={false}
-                onDelegateClick={handleOpenProcessModal}
+                onProcessClick={(docId, mode) => handleOpenProcessModal(docId, mode)}
             />
 
             <DocumentProcessPage
                 isOpen={isProcessModalOpen}
                 onClose={handleCloseProcessModal}
-                documentIds={documentIdForModal}
-                mode={'delegate'} // 'add', 'return', 'recall' hoặc 'complete'
+                documentIds={documentIdForModal ? [documentIdForModal] : []}
+                mode={modalMode}
             />
         </div>
     );

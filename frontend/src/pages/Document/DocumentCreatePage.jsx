@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { EyeIcon } from '@heroicons/react/24/outline';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import axios from 'axios';
@@ -59,6 +60,11 @@ const DocumentCreatePage = () => {
         setAttachedFiles(prevFiles => [...prevFiles, ...files]);
     };
 
+    const handlePreviewLocalFile = (file) => {
+        const url = URL.createObjectURL(file);
+        window.open(url, '_blank', 'noopener,noreferrer');
+    };
+
     const handleRemoveFile = (fileNameToRemove) => {
         setAttachedFiles(attachedFiles.filter(file => file.name !== fileNameToRemove));
     };
@@ -98,7 +104,7 @@ const DocumentCreatePage = () => {
             data.append(key, formData[key]);
         }
         attachedFiles.forEach(file => {
-            data.append('attachments', file);
+            data.append('attachments', file, file.name);
         });
 
         try {
@@ -358,7 +364,15 @@ const DocumentCreatePage = () => {
                                         onMouseEnter={() => setHoveredFile(file.name)}
                                         onMouseLeave={() => setHoveredFile(null)}
                                     >
-                                        <span>{file.name}</span>
+                                        <span className="text-xs mr-2">{file.name}</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => handlePreviewLocalFile(file)}
+                                            title="Xem trước"
+                                            className="mr-1 text-blue-600 hover:text-blue-800"
+                                        >
+                                            <EyeIcon className="h-4 w-4" />
+                                        </button>
                                         {hoveredFile === file.name && (
                                             <button
                                                 type="button"

@@ -113,8 +113,8 @@ const documentSchema = new Schema({
     },
     confidentialityLevel: {
         type: String,
-        enum: [constants.CONFIDENTIALITY_LEVEL.NORMAL, constants.CONFIDENTIALITY_LEVEL.CONFIDENTIAL, 
-            constants.CONFIDENTIALITY_LEVEL.SECRET],
+        enum: [constants.CONFIDENTIALITY_LEVEL.NORMAL, constants.CONFIDENTIALITY_LEVEL.CONFIDENTIAL,
+        constants.CONFIDENTIALITY_LEVEL.SECRET],
         default: constants.CONFIDENTIALITY_LEVEL.NORMAL
     },
     documentType: {
@@ -161,6 +161,20 @@ const documentSchema = new Schema({
     },
     assignedTo: [processingAssignmentSchema],
     processingHistory: [processingHistorySchema],
+    // Các trường phục vụ hiển thị lý do trả lại nhanh trên danh sách
+    lastReturnReason: {
+        type: String,
+        default: ''
+    },
+    lastReturnedBy: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        default: null
+    },
+    lastReturnedAt: {
+        type: Date,
+        default: null
+    },
 });
 
 module.exports = mongoose.model('Document', documentSchema);

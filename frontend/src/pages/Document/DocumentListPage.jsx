@@ -89,6 +89,7 @@ const ordersColumns = [
   { key: 'category', header: 'Lĩnh vực', sortable: true, widthClass: 'min-w-[250px]' },
   { key: 'signer', header: 'Người ký', sortable: true, widthClass: 'min-w-[200px]' },
   { key: 'summary', header: 'Trích yếu', sortable: true, widthClass: 'min-w-[350px]' },
+  { key: 'lastReturnReason', header: 'Lý do trả lại', sortable: false, widthClass: 'min-w-[250px]' },
   { key: 'status', header: 'Trạng thái', sortable: true, widthClass: 'min-w-[200px]' },
   { key: 'action', header: 'Thao tác', sortable: false, widthClass: 'min-w-[120px] text-center', sticky: true },
 ];
