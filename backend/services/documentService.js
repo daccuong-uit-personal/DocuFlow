@@ -15,10 +15,20 @@ const createHistoryEntry = (action, actorId, details = {}) => ({
 
 exports.createDocument = async (documentData, userId) => {
     try {
+        const newAssignment = {
+            userId: userId,
+            role: 'read',
+            status: 'pending',
+            assignedBy: userId,
+            note: 'Người tạo văn bản',
+            deadline: null
+        };
+
         const document = new Document({
             ...documentData,
             status: 'Draft',
-            createdBy: userId // Sửa 'createBy' thành 'createdBy' cho khớp với Schema
+            createdBy: userId,
+            assignedTo: [newAssignment]
         });
 
         await document.save();
@@ -101,7 +111,7 @@ exports.deleteManyDocuments = async (documentIds) => {
     }
 };
 
-exports.searchAndFilterDocuments = async (queryOptions) => {
+exports.searchAndFilterDocuments = async (queryOptions, user) => {
     try {
         const {
             searchText,
@@ -124,6 +134,10 @@ exports.searchAndFilterDocuments = async (queryOptions) => {
 
         let query = {};
 
+        if (user && user.roleName !== 'admin') {
+            query['assignedTo.userId'] = user.id;
+        }
+        
         if (searchText) {
             const searchRegex = new RegExp(searchText, 'i');
             query.$or = [
@@ -202,6 +216,37 @@ exports.searchAndFilterDocuments = async (queryOptions) => {
     }
 };
 
+// Hàm này có thể được sử dụng lại bởi các service khác
+const updateOrCreateAssignments = (currentAssignments, newProcessors, assignerId, note, deadline) => {
+    const newAssignmentsMap = new Map(newProcessors.map(p => [p.userId.toString(), p]));
+    const updatedAssignments = [];
+
+    // Lọc ra các assignment không có trong danh sách mới
+    const existingAssignments = currentAssignments.filter(assignment => {
+        const assignmentUserId = assignment.userId.toString();
+        // Nếu user này có trong danh sách mới, ta sẽ cập nhật hoặc thay thế
+        return !newAssignmentsMap.has(assignmentUserId);
+    });
+
+    // Thêm các assignment hiện có vào danh sách cập nhật
+    updatedAssignments.push(...existingAssignments);
+
+    // Thêm hoặc cập nhật các assignment mới từ danh sách đầu vào
+    newProcessors.forEach(processor => {
+        const assignment = {
+            userId: processor.userId,
+            role: processor.role,
+            note: note,
+            deadline: deadline,
+            assignedBy: assignerId,
+            status: 'pending'
+        };
+        updatedAssignments.push(assignment);
+    });
+
+    return updatedAssignments;
+};
+
 exports.processDocuments = async (documentIds, assignerId, processors, note, deadline) => {
     const documents = await Document.find({ _id: { $in: documentIds } });
     if (!documents || documents.length === 0) {
@@ -211,38 +256,27 @@ exports.processDocuments = async (documentIds, assignerId, processors, note, dea
     const updatedDocuments = [];
 
     for (const doc of documents) {
+        // Kiểm tra quyền xử lý
         const currentAssignment = doc.assignedTo.find(
             a => a.userId.toString() === assignerId.toString() && a.status === 'pending'
         );
-
         if (!currentAssignment && doc.createdBy.toString() !== assignerId.toString()) {
             throw new Error(`Bạn không có quyền xử lý văn bản có ID: ${doc._id}.`);
         }
-
-        const newAssignments = processors.map(processor => ({
-            userId: processor.userId,
-            role: processor.role,
-            note: note,
-            deadline: deadline,
-            assignedBy: assignerId,
-            status: 'pending'
-        }));
-
-        // Thêm người xử lý mới
-        doc.assignedTo.push(...newAssignments);
-
-        // Đánh dấu nhiệm vụ hiện tại đã hoàn thành nếu đây là hành động DELEGATE
+        
+        // Cập nhật danh sách assignedTo
+        doc.assignedTo = updateOrCreateAssignments(doc.assignedTo, processors, assignerId, note, deadline);
+        
+        // Cập nhật trạng thái của người ủy quyền (nếu có)
         const isDelegateAction = processors.some(p => p.role === 'read');
         if (isDelegateAction && currentAssignment) {
             currentAssignment.status = 'completed';
         }
 
         // Ghi lại lịch sử
-        doc.processingHistory.push(createHistoryEntry(
-            isDelegateAction ? constants.ACTIONS.DELEGATE : constants.ACTIONS.ADD_PROCESSOR,
-            assignerId,
-            { processors: newAssignments, note: note }
-        ));
+        const historyAction = isDelegateAction ? constants.ACTIONS.DELEGATE : constants.ACTIONS.ADD_PROCESSOR;
+        const historyEntry = createHistoryEntry(historyAction, assignerId, { processors, note });
+        doc.processingHistory.push(historyEntry);
 
         // Cập nhật trạng thái tổng thể của văn bản
         doc.status = constants.DOCUMENT_STATUS.PROCESSING;
@@ -252,6 +286,13 @@ exports.processDocuments = async (documentIds, assignerId, processors, note, dea
     }
 
     return updatedDocuments;
+};
+
+exports.updateProcessors = async (documentIds, assignerId, updates) => {
+    const note = updates.note || "Cập nhật người xử lý.";
+    const deadline = updates.deadline || null;
+
+    return await exports.processDocuments(documentIds, assignerId, updates.processors, note, deadline);
 };
 
 // Hàm service để trả lại văn bản

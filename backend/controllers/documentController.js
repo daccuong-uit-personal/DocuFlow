@@ -1,5 +1,6 @@
 // Xử lý các thao tác với văn bản
 
+const constants = require("../constants/constants");
 const DocumentService = require("../services/documentService");
 
 exports.createDocument = async (req, res) => {
@@ -24,6 +25,7 @@ exports.createDocument = async (req, res) => {
 exports.getDocuments = async (req, res) => {
     try {
         const queryOptions = req.query;
+        const user = req.user;
 
         if (queryOptions.recivedDateFrom) {
             queryOptions.recivedDateFrom = new Date(queryOptions.recivedDateFrom);
@@ -38,7 +40,7 @@ exports.getDocuments = async (req, res) => {
             queryOptions.dueDateTo = new Date(queryOptions.dueDateTo);
         }
 
-        const documents = await DocumentService.searchAndFilterDocuments(queryOptions);
+        const documents = await DocumentService.searchAndFilterDocuments(queryOptions, user);
 
         res.status(200).json(documents);
     } catch (error) {
@@ -123,18 +125,28 @@ exports.processDocuments = async (req, res) => {
 // Hàm này thay thế cho exports.updateProcessor cũ
 exports.updateProcessors = async (req, res) => {
     try {
-        const { documentIds, updates } = req.body;
+        const { documentIds, processors, note, deadline } = req.body;
         const assignerId = req.user.id;
 
+        // Kiểm tra dữ liệu đầu vào
         if (!documentIds || !Array.isArray(documentIds) || documentIds.length === 0) {
             return res.status(400).json({ message: "Cần cung cấp ít nhất một ID văn bản." });
         }
-        if (!updates || !Array.isArray(updates) || updates.length === 0) {
-            return res.status(400).json({ message: "Cần cung cấp ít nhất một thay đổi." });
+        if (!processors || !Array.isArray(processors) || processors.length === 0) {
+            return res.status(400).json({ message: "Cần cung cấp ít nhất một người xử lý." });
         }
+
+        // Tạo một đối tượng updates để truyền vào service
+        const updates = {
+            processors: processors,
+            note: note,
+            deadline: deadline,
+            action: constants.ACTIONS.ADD_PROCESSOR
+        };
 
         const updatedDocuments = await DocumentService.updateProcessors(documentIds, assignerId, updates);
         return res.status(200).json({ documents: updatedDocuments });
+
     } catch (error) {
         console.error("Lỗi trong controller updateProcessors:", error);
         return res.status(400).json({ message: error.message });
