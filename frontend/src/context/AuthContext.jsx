@@ -41,6 +41,13 @@ export const AuthProvider = ({ children }) => {
       console.log('Login successful:', userData);
     } catch (error) {
       console.error('Login failed:', error);
+      
+      // Kiểm tra nếu là lỗi tài khoản bị khóa
+      const errorMessage = error.response?.data?.message || error.message;
+      if (errorMessage === 'Tài khoản này đã bị khóa!') {
+        // toast.error(errorMessage);
+      }
+      
       throw error;
     }
   };

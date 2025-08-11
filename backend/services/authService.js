@@ -5,7 +5,6 @@ const User = require('../models/User');
 const { hashPassword, comparePassword } = require('../utils/hashPassword');
 const jwt = require('jsonwebtoken');
 
-
 exports.login = async (userName, password) => {
     try {
         const user = await User.findOne({ userName }).select('+password').populate({
@@ -25,6 +24,11 @@ exports.login = async (userName, password) => {
             throw new Error('Tên đăng nhập hoặc mật khẩu không đúng.');
         }
 
+        // Kiểm tra tài khoản có bị khóa không
+        if (user.isLocked) {
+            throw new Error('Tài khoản này đã bị khóa!');
+        }
+
         const permissions = user.role.permissions.map(perm => perm.name);
 
         const payload = {
@@ -36,10 +40,14 @@ exports.login = async (userName, password) => {
             permissions: permissions
         };
 
-        const token = jwt.sign(payload, JWT_SECRET , { expiresIn: '10h' });
+        const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '10h' });
+
+        // Cập nhật lastLogin
+        user.lastLogin = new Date();
+        await user.save();
 
         user.password = undefined;
-        return {user, token};
+        return { user, token };
     } catch (error) {
         console.error("Lỗi khi đăng nhập:", error.message);
         throw new Error(error.message);
