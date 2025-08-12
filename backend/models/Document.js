@@ -77,8 +77,6 @@ const documentSchema = new Schema({
     },
     documentNumber: {
         type: String,
-        required: true,
-        unique: true,
         trim: true
     },
     sendingUnit: {

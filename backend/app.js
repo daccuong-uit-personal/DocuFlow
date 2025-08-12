@@ -9,6 +9,7 @@ const path = require('path');
 const connectDB = require('./config/db');
 const config = require('./config/config');
 const errorHandler = require('./middlewares/errorMiddleware');
+const { swaggerUi, swaggerSpec } = require('./config/swagger');
 
 // Import các file routes
 const authRoutes = require('./routes/authRoutes');
@@ -58,5 +59,8 @@ app.use('/api/permissions', permissionRoutes);
 app.use('/api/roles', roleRoutes);
 
 // app.use(errorHandler);
+
+// Đường dẫn tài liệu API
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 module.exports = app;

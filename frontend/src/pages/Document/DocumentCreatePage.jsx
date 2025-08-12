@@ -73,7 +73,7 @@ const DocumentCreatePage = () => {
         e.preventDefault();
         
         const requiredFields = [
-            'documentBook', 'documentNumber', 'sendingUnit', 'recivingUnit',
+            'documentBook', 'sendingUnit', 'recivingUnit',
             'recivedDate', 'recordedDate', 'dueDate', 'documentType', 'category', 'signer'
         ];
         
