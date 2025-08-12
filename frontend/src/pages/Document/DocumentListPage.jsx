@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import {
@@ -39,7 +39,7 @@ const mockUrgencyLevels = [
 
 const mockConfidentialityLevels = [
   { value: '', label: 'Tất cả mức độ bảo mật' },
-  { value: 'Thường', label: 'Thường' },
+  { value: 'Bình thường', label: 'Bình thường' },
   { value: 'Mật', label: 'Mật' },
   { value: 'Tối mật', label: 'Tối mật' },
 ];
@@ -192,11 +192,23 @@ const DocumentListPage = () => {
     setFilterRecivedDateTo('');
   };
 
+  // Sắp xếp các văn bản theo recordedDate (Ngày ghi sổ) mới nhất đến cũ nhất
+  const sortedDocuments = useMemo(() => {
+    if (!documents) {
+      return [];
+    }
+    // Tạo bản sao để không làm thay đổi mảng ban đầu
+    const sorted = [...documents].sort((a, b) => {
+      return new Date(b.recordedDate) - new Date(a.recordedDate);
+    });
+    return sorted;
+  }, [documents]); 
+
   // Calculate total pages and data for the current page
-  const totalPages = Math.ceil(documents.length / itemsPerPage);
+  const totalPages = Math.ceil(sortedDocuments.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentData = documents.slice(startIndex, endIndex);
+  const currentData = sortedDocuments.slice(startIndex, endIndex);
 
   // Event handlers for pagination
   const handleNextPage = () => {

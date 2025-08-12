@@ -55,11 +55,11 @@ const ChangePasswordForm = ({ isOpen, onClose, onConfirm }) => {
       setIsLoading(false);
       return;
     }
-    // if (newPassword.length < 6) {
-    //   toast.error('Mật khẩu mới phải có ít nhất 6 ký tự.');
-    //   setIsLoading(false);
-    //   return;
-    // }
+    if (newPassword.length < 6) {
+      toast.error('Mật khẩu mới phải có ít nhất 6 ký tự.');
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const token = localStorage.getItem('token');
