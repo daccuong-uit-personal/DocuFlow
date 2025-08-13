@@ -68,7 +68,8 @@ const LoginForm = () => {
         toast.error(errorMessage);
         setError(errorMessage);
       } else {
-        setError('Tên đăng nhập hoặc mật khẩu không đúng!');
+        toast.error('Tên đăng nhập hoặc mật khẩu không đúng!');
+        setError('');
       }
       
       setIsLoading(false);
@@ -148,13 +149,13 @@ const LoginForm = () => {
         </motion.div> */}
         
         {/* Hiển thị thông báo lỗi */}
-        {error ? (
+        {/* {error ? (
           <p className={`text-xs font-medium ${error === 'Tài khoản này đã bị khóa!' ? 'text-orange-600' : 'text-red-500'}`}>
             {error}
           </p>
         ) : (
           <p className="text-red-500 text-xs font-medium opacity-0">h</p>
-        )}
+        )} */}
 
         {/* Nút Đăng nhập */}
         <motion.button
