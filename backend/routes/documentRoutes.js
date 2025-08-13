@@ -8,11 +8,10 @@ const {
     deleteDocument,
     getDocuments,
     deleteManyDocuments,
-    processDocuments,
-    updateProcessors,
+    forwardProcessDocuments,
     returnDocuments,
     markAsComplete,
-    recallDocuments,
+
 } = require("../controllers/documentController");
 
 const { authenticateToken, authorizePermissions } = require("../middlewares/authMiddleware");
@@ -67,6 +66,32 @@ const upload = require('../middlewares/uploadMiddleware');
  */
 router.route("/").get(authenticateToken, authorizePermissions(['document:read']), getDocuments);
 router.route("/").post(authenticateToken, authorizePermissions(['document:create']), upload.array('attachments', 10), createDocument);
+
+/**
+ * @swagger
+ * /api/documents/bulk-delete:
+ *   delete:
+ *     summary: Xóa nhiều văn bản
+ *     tags: [Documents]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               ids:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 example: ["64cd2f9f8b3f1f001f0eabcd", "64cd2f9f8b3f1f001f0eabce"]
+ *     responses:
+ *       200:
+ *         description: Xóa thành công
+ */
+router.route('/bulk-delete').delete(authenticateToken, authorizePermissions(['document:delete']), deleteManyDocuments);
 
 /**
  * @swagger
@@ -132,32 +157,6 @@ router.route("/:id").delete(authenticateToken, authorizePermissions(['document:d
 
 /**
  * @swagger
- * /api/documents/bulk-delete:
- *   delete:
- *     summary: Xóa nhiều văn bản
- *     tags: [Documents]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               ids:
- *                 type: array
- *                 items:
- *                   type: string
- *                 example: ["64cd2f9f8b3f1f001f0eabcd", "64cd2f9f8b3f1f001f0eabce"]
- *     responses:
- *       200:
- *         description: Xóa thành công
- */
-router.route('/bulk-delete').delete(authenticateToken, authorizePermissions(['document:delete']), deleteManyDocuments);
-
-/**
- * @swagger
  * /api/documents/process:
  *   post:
  *     summary: Giao xử lý văn bản
@@ -183,34 +182,7 @@ router.route('/bulk-delete').delete(authenticateToken, authorizePermissions(['do
  *       200:
  *         description: Giao xử lý thành công
  */
-router.route("/process").post(authenticateToken, authorizePermissions(['document:delegate', 'document:add-processor']), processDocuments);
-
-/**
- * @swagger
- * /api/documents/update-processors:
- *   put:
- *     summary: Cập nhật danh sách người xử lý
- *     tags: [Documents]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               documentId:
- *                 type: string
- *               processors:
- *                 type: array
- *                 items:
- *                   type: string
- *     responses:
- *       200:
- *         description: Cập nhật thành công
- */
-router.route("/update-processors").put(authenticateToken, authorizePermissions(['document:updateProcess']), updateProcessors);
+router.route("/process").post(authenticateToken, authorizePermissions(['document:forward']), forwardProcessDocuments);
 
 /**
  * @swagger
@@ -233,16 +205,5 @@ router.route("/return").post(authenticateToken, authorizePermissions(['document:
  *       - bearerAuth: []
  */
 router.route("/complete").post(authenticateToken, authorizePermissions(['document:complete']), markAsComplete);
-
-/**
- * @swagger
- * /api/documents/recall:
- *   post:
- *     summary: Thu hồi văn bản
- *     tags: [Documents]
- *     security:
- *       - bearerAuth: []
- */
-router.route("/recall").post(authenticateToken, authorizePermissions(['document:recall']), recallDocuments);
 
 module.exports = router;

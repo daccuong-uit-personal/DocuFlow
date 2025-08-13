@@ -283,8 +283,8 @@ const DocumentFormPage = ({ initialData, isEditMode = false, onSave, onProcessCl
                     </div>
                 </div>
 
-                {!isEditMode && initialData?.document?.assignedTo && (
-                    <AssignedUsersList assignedTo={initialData.document.assignedTo} />
+                {!isEditMode && initialData?.document?.currentAssignments && (
+                    <AssignedUsersList currentAssignments={initialData.document.currentAssignments} />
                 )}
 
                 {!isEditMode && initialData?.document?.processingHistory && (

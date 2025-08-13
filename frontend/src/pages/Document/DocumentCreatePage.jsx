@@ -165,7 +165,7 @@ const DocumentCreatePage = () => {
                             />
                         </div>
                         <div className="col-span-1">
-                            <label className="block text-xs font-medium text-gray-700 mb-1">Số phụ</label>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Sổ văn bản</label>
                             <input
                                 type="text"
                                 name="documentNumber"
