@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { usePermissions } from '../../hooks/usePermissions';
 import { useNavigate } from 'react-router-dom';
 
 import AttachmentsList from '../../components/common/AttachmentsList'
@@ -127,6 +128,8 @@ const DocumentFormPage = ({ initialData, isEditMode = false, onSave, onProcessCl
         navigate(-1);
     };
 
+    const { hasRole } = usePermissions();
+
     return (
         <div className="bg-gray-100 min-h-full">
             <div className="flex justify-between items-center">
@@ -163,10 +166,12 @@ const DocumentFormPage = ({ initialData, isEditMode = false, onSave, onProcessCl
                                 className="h-8 flex items-center px-4 py-2 text-xs font-medium text-white bg-gradient-to-tl from-sky-300 from-30% to-sky-500 border border-gray-300 rounded-lg shadow-sm hover:bg-blue-600">
                                 Chuyển xử lý
                             </button>
-                            <button onClick={() => onProcessClick(initialData.document._id, 'return')}
-                                className="h-8 flex items-center px-4 py-2 text-xs font-medium text-white bg-gradient-to-tl from-sky-300 from-30% to-sky-500 border border-gray-300 rounded-lg shadow-sm hover:bg-yellow-600">
-                                Trả lại
-                            </button>
+                            {!hasRole('van_thu') && (
+                                <button onClick={() => onProcessClick(initialData.document._id, 'return')}
+                                    className="h-8 flex items-center px-4 py-2 text-xs font-medium text-white bg-gradient-to-tl from-sky-300 from-30% to-sky-500 border border-gray-300 rounded-lg shadow-sm hover:bg-yellow-600">
+                                    Trả lại
+                                </button>
+                            )}
                         </>
                     )}
                     

@@ -12,6 +12,7 @@ import {
   AccordionHeader,
   AccordionBody,
 } from "@material-tailwind/react";
+import { images } from "../../assets/images/images";
 import {
   UserIcon,
   UserCircleIcon,
@@ -24,6 +25,7 @@ import {
   RectangleStackIcon,
 } from "@heroicons/react/24/solid";
 import { usePermissions } from "../../hooks/usePermissions";
+import constants from "../../utils/constants";
 import ProtectedComponent from "../common/ProtectedComponent";
 
 // --- Sidebar Component ---
@@ -31,7 +33,7 @@ const Sidebar = () => {
   // Thay đổi state để lưu trữ nhiều ID đang mở
   const [open, setOpen] = React.useState([]);
   const location = useLocation();
-  const { isAdmin, canViewUsers } = usePermissions();
+  const { isAdmin, hasAnyRole } = usePermissions();
 
   // Logic mới để thêm/xóa ID vào mảng
   const handleOpen = (value) => {
@@ -50,7 +52,10 @@ const Sidebar = () => {
       id: 1,
       subItems: [
         { name: 'Danh sách văn bản', icon: <Bars3Icon className="h-3 w-5" />, link: '/documents' },
-        { name: 'Tạo mới văn bản', icon: <PlusCircleIcon className="h-3 w-5" />, link: '/documents/create' },
+        // Chỉ hiện 'Tạo mới văn bản' cho admin hoặc văn thư
+        ...(hasAnyRole([constants.ROLES.ADMIN, constants.ROLES.VAN_THU])
+          ? [{ name: 'Tạo mới văn bản', icon: <PlusCircleIcon className="h-3 w-5" />, link: '/documents/create' }]
+          : []),
       ]
     },
     // Chỉ hiển thị menu Người dùng nếu user là admin
@@ -70,10 +75,8 @@ const Sidebar = () => {
 
   return (
     <Card className="h-auto w-full max-w-[20rem] p-4 pl-0 pr-0 shadow-blue-gray-900/5 text-sm">
-      <div className="mb-2 p-4 pt-1">
-        <Typography variant="h5" color="blue-gray">
-          DOCUFLOW
-        </Typography>   
+      <div className="mb-2 p-4 pt-1 flex items-center">
+        <img src={images.logoDocuFlow} alt="DocuFlow" className="h-8 w-auto" />
       </div>
       <div className="px-4 py-2 mb-2">
         <Typography variant="small" color="blue-gray" className="opacity-70">

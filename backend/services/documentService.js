@@ -199,7 +199,6 @@ exports.searchAndFilterDocuments = async (queryOptions, user) => {
                 query.dueDate.$lte = dueDateTo;
             }
         }
-
         const documents = await Document.find(query).sort({ recivedDate: -1 });
         return documents;
     } catch (error) {
@@ -362,7 +361,6 @@ exports.returnDocuments = async (documentIds, assigneeId, note) => {
     return updatedDocuments;
 };
 
-// Đánh dấu văn bản là đã hoàn thành.
 exports.markAsComplete = async (documentIds, processorId) => {
     const documents = await Document.find({ _id: { $in: documentIds } });
     if (!documents || documents.length === 0) {

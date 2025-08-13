@@ -2,7 +2,11 @@ import React from 'react';
 import { formatDate } from '../../utils/helper';
 
 const AssignedUsersList = ({ currentAssignments }) => {
-    if (!currentAssignments || currentAssignments.length === 0) {
+    const visibleAssignments = Array.isArray(currentAssignments)
+        ? currentAssignments.filter(a => a.status !== 'rejected')
+        : [];
+
+    if (!visibleAssignments || visibleAssignments.length === 0) {
         return (
             <div className="bg-white p-4 rounded-xl shadow-md mt-4">
                 <h3 className="text-sm font-semibold text-gray-800 mb-2">
@@ -60,7 +64,7 @@ const AssignedUsersList = ({ currentAssignments }) => {
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {currentAssignments.map((assignment, index) => (
+                        {visibleAssignments.map((assignment, index) => (
                             <tr key={index}>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     {assignment.userId?.name || 'N/A'}

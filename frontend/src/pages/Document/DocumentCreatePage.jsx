@@ -56,8 +56,29 @@ const DocumentCreatePage = () => {
     };
 
     const handleFileChange = (e) => {
-        const files = Array.from(e.target.files);
-        setAttachedFiles(prevFiles => [...prevFiles, ...files]);
+        const files = Array.from(e.target.files || []);
+        const allowedExtensions = ['.pdf', '.docx', '.xlsx'];
+
+        const validFiles = [];
+        const rejectedFiles = [];
+
+        files.forEach((file) => {
+            const name = file.name.toLowerCase();
+            const hasAllowedExt = allowedExtensions.some(ext => name.endsWith(ext));
+            if (hasAllowedExt) {
+                validFiles.push(file);
+            } else {
+                rejectedFiles.push(file.name);
+            }
+        });
+
+        if (rejectedFiles.length > 0) {
+            toast.error(`Chỉ cho phép tệp .pdf, .docx, .xlsx!`);
+        }
+
+        if (validFiles.length > 0) {
+            setAttachedFiles(prevFiles => [...prevFiles, ...validFiles]);
+        }
     };
 
     const handlePreviewLocalFile = (file) => {
@@ -73,7 +94,7 @@ const DocumentCreatePage = () => {
         e.preventDefault();
         
         const requiredFields = [
-            'documentBook', 'sendingUnit', 'recivingUnit',
+            'documentBook', 'documentNumber', 'sendingUnit', 'recivingUnit',
             'recivedDate', 'recordedDate', 'dueDate', 'documentType', 'category', 'signer'
         ];
         
@@ -353,6 +374,7 @@ const DocumentCreatePage = () => {
                                     <input
                                         type="file"
                                         multiple
+                                        accept=".pdf,.docx,.xlsx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                                         className="hidden"
                                         onChange={handleFileChange}
                                     />

@@ -23,6 +23,8 @@ const constants = {
         COMPLETED: "Completed",
         REJECTED: "Rejected",
         CANCELED: "Canceled",
+        RETURNED: "Returned",
+        RECALLED: "Recalled",
         COORDINATION: "Coordination",
         FOR_INFORMATION: "ForInformation",
     },
