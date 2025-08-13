@@ -9,3 +9,15 @@ exports.canDelegate = (assignerRole, assigneeRole) => {
 
     return false;
 };
+
+// Lấy tất cả các role cấp dưới (đệ quy)
+exports.getAllLowerRoles = (roleName) => {
+    let result = [];
+    if (roleHierarchy[roleName]) {
+        for (const lowerRole of roleHierarchy[roleName]) {
+            result.push(lowerRole);
+            result = result.concat(exports.getAllLowerRoles(lowerRole));
+        }
+    }
+    return result;
+};

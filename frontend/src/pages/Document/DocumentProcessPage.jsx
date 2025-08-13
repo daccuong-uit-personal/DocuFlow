@@ -12,9 +12,8 @@ import { toast } from 'react-toastify';
 // Map vai trò sang tiếng Việt để hiển thị
 const roleMapping = {
     delegate: 'Chuyển xử lý',
-    add: 'Thêm sửa xử lý',
     return: 'Trả lại',
-    complete: 'Hoàn thành xử lý',
+    completed: 'Hoàn thành xử lý',
     recall: 'Thu hồi',
 };
 
@@ -41,7 +40,7 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, }) => {
     }, [mode]);
 
     useEffect(() => {
-        if (isOpen && user && user.role && user.role.name && (mode === 'delegate' || mode === 'add')) {
+        if (isOpen && user && user.role && user.role.name && (mode === 'delegate')) {
             const transferableRoles = roleHierarchy[user.role.name] || [];
             console.log('Transferable roles:', transferableRoles);
             fetchUsers('', '', transferableRoles, '', '');
@@ -69,6 +68,18 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, }) => {
             newSelectedUsers = newSelectedUsers.filter(u => u._id !== userToSelect._id);
         } else {
             newRoles[userToSelect._id] = role;
+            // Nếu chọn bộ xử lý chính, hãy đảm bảo chỉ có 1 người dùng có vai trò này
+            if (role === 'mainProcessor') {
+                Object.keys(newRoles).forEach((userId) => {
+                    if (userId !== userToSelect._id && newRoles[userId] === 'mainProcessor') {
+                        delete newRoles[userId];
+                    }
+                });
+                // Sau khi thực thi mainProcessor đơn, hãy xóa danh sách selectedUsers
+                newSelectedUsers = newSelectedUsers.filter(u => newRoles[u._id]);
+            }
+
+            // Thêm vào mục đã chọn nếu chưa có
             if (!newSelectedUsers.find(u => u._id === userToSelect._id)) {
                 newSelectedUsers.push(userToSelect);
             }
@@ -113,25 +124,6 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, }) => {
 
                     await processDocuments(finalDocumentIds, delegatedProcessors, note, deadline);
                     break;
-                case 'add':
-                    if (selectedUsers.length === 0) {
-                        toast.warn("Vui lòng chọn ít nhất một người để thêm vào xử lý.");
-                        setIsLoading(false);
-                        return;
-                    }
-                    const addedProcessors = selectedUsers.map(u => ({
-                        userId: u._id,
-                        role: userRoles[u._id],
-                    })).filter(p => p.role);
-
-                    if (addedProcessors.length === 0) {
-                        toast.warn("Vui lòng chọn ít nhất một vai trò cho người được thêm.");
-                        setIsLoading(false);
-                        return;
-                    }
-
-                    await updateProcessors(finalDocumentIds, addedProcessors, note, deadline);
-                    break;
                 case 'return':
                     // Trả lại văn bản về cho người giao trước đó, kèm lý do
                     await returnDocuments(finalDocumentIds, note);
@@ -140,7 +132,7 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, }) => {
                     // Sửa lỗi ở đây: Sử dụng hàm recallDocuments từ context
                     await recallDocuments(documentIds);
                     break;
-                case 'complete':
+                case 'completed':
                     // Sửa lỗi ở đây: Sử dụng hàm markAsComplete từ context
                     await markAsComplete(documentIds);
                     break;
@@ -162,7 +154,6 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, }) => {
         // ... (phần UI không thay đổi)
         switch (mode) {
             case 'delegate':
-            case 'add':
                 return (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 border border-gray-300 rounded-lg">
                         <div className="p-2 border-r border-gray-300">
@@ -191,7 +182,12 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, }) => {
                                             <tr key={user._id}>
                                                 <td className="px-6 whitespace-nowrap text-xs text-gray-900">
                                                     <div className="flex flex-col">
-                                                        <span className="font-semibold text-blue-600">{user.name}</span>
+                                                        <span className="font-semibold text-blue-600">
+                                                            {user.name}
+                                                            { (user.role?.description || user.role?.name) && (
+                                                                <span className="ml-1 text-red-500 font-normal text-[11px]">- {user.role?.description || user.role?.name}</span>
+                                                            )}
+                                                        </span>
                                                         <span className="text-xs text-gray-500">{user.unit}</span>
                                                     </div>
                                                 </td>
@@ -273,7 +269,7 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, }) => {
                 );
             case 'return':
             case 'recall':
-            case 'complete':
+            case 'completed':
                 return (
                     <div className='p-2'>
                         <h4 className="text-sm font-medium mb-2">Thông tin xử lý</h4>
@@ -292,7 +288,7 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, }) => {
                         {mode === 'recall' && (
                             <p className="text-sm text-gray-700">Bạn có chắc chắn muốn thu hồi văn bản này?</p>
                         )}
-                        {mode === 'complete' && (
+                        {mode === 'completed' && (
                             <p className="text-sm text-gray-700">Bạn có chắc chắn muốn đánh dấu văn bản này đã hoàn thành?</p>
                         )}
                         <div className="mt-4 flex justify-end space-x-4">

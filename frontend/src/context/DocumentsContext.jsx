@@ -35,7 +35,7 @@ export const DocumentProvider = ({ children }) => {
         } catch (err) {
             setError(err.message || 'Có lỗi xảy ra.');
             console.error(err);
-            throw err;
+            return null;
         } finally {
             setLoading(false);
         }

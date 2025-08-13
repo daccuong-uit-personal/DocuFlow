@@ -158,9 +158,9 @@ const DocumentFormPage = ({ initialData, isEditMode = false, onSave, onProcessCl
                     )}
                     {!isEditMode && (
                         <>
-                            <button onClick={() => onProcessClick(initialData.document._id, 'add')}
+                            <button onClick={() => onProcessClick(initialData.document._id, 'completed')}
                                 className="h-8 flex items-center px-4 py-2 text-xs font-medium text-white bg-gradient-to-tl from-sky-300 from-30% to-sky-500 border border-gray-300 rounded-lg shadow-sm hover:bg-green-600">
-                                Thêm sửa xử lý
+                                Hoàn thành văn bản
                             </button>
                             <button onClick={() => onProcessClick(initialData.document._id, 'delegate')}
                                 className="h-8 flex items-center px-4 py-2 text-xs font-medium text-white bg-gradient-to-tl from-sky-300 from-30% to-sky-500 border border-gray-300 rounded-lg shadow-sm hover:bg-blue-600">

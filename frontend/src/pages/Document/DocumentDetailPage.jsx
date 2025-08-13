@@ -17,7 +17,7 @@ const DocumentDetailPage = () => {
 
     const [documentIdForModal, setDocumentIdForModal] = useState(null);
 
-    const [modalMode, setModalMode] = useState('add');
+    const [modalMode, setModalMode] = useState('completed');
 
     const handleOpenProcessModal = (docId, mode) => {
         setDocumentIdForModal(docId);
