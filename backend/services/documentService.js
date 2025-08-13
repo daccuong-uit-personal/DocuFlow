@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
 const Document = require("../models/Document");
 const User = require("../models/User");
 const constants = require("../constants/constants");
-const { canDelegate } = require("./roleFlowService");
+const { canDelegate, getAllLowerRoles } = require("./roleFlowService");
 
 // Helper function để tạo một đối tượng lịch sử xử lý.
 const createHistoryEntry = (action, actorId, details) => {
@@ -282,16 +282,21 @@ exports.forwardProcessDocuments = async (documentIds, assignerId, processors, no
         const newAssignments = [];
 
         for (const p of processors) {
-            // Tìm xem người nhận mới đã có nhiệm vụ đang xử lý hay chưa
-            const isAlreadyAssigned = doc.currentAssignments.some(assignment => 
-                assignment.userId.equals(p.userId) && assignment.status === 'processing'
+            const existingAssignment = doc.currentAssignments.find(a =>
+                a.userId.equals(p.userId)
             );
 
-            // Nếu người này chưa có nhiệm vụ nào, tạo một nhiệm vụ mới
-            if (!isAlreadyAssigned) {
+            if (!existingAssignment) {
                 newAssignments.push(createProcessingAssignment(p, assignerId, note, deadline));
+            } else if (existingAssignment.status === 'processing') {
+                continue;
+            } else if (['completed', 'returned'].includes(existingAssignment.status)) {
+                existingAssignment.status = 'processing';
+                existingAssignment.note = note;
+                existingAssignment.deadline = deadline;
+                existingAssignment.assignedBy = assignerId;
+                existingAssignment.assignedAt = new Date();
             }
-            // Nếu họ đã có nhiệm vụ đang xử lý, bỏ qua và không tạo thêm nhiệm vụ trùng lặp
         }
 
         // 5. Thêm các nhiệm vụ mới vào danh sách
@@ -318,40 +323,111 @@ exports.forwardProcessDocuments = async (documentIds, assignerId, processors, no
     return updatedDocuments;
 };
 
-// Trả lại văn bản cho người đã giao trước đó.
+// Trả lại văn bản cho người đã giao trước đó
 exports.returnDocuments = async (documentIds, assigneeId, note) => {
-    const documents = await Document.find({ _id: { $in: documentIds } });
+    const processorUser = await User.findById(assigneeId).populate('role', 'name');
+    if (!processorUser) {
+        throw new Error('Không tìm thấy người dùng.');
+    }
+
+    const documents = await Document.find({ _id: { $in: documentIds } })
+    .populate({
+        path: 'currentAssignments.userId',
+        select: 'role',
+        populate: {
+            path: 'role',
+            select: 'name'
+        }
+    });
     if (!documents || documents.length === 0) {
         throw new Error('Không tìm thấy văn bản nào.');
     }
 
     const updatedDocuments = [];
+
     for (const doc of documents) {
         const assignmentToReturn = doc.currentAssignments.find(
-            a => a.userId.toString() === assigneeId.toString() && a.status === 'processing'
+            a => a.userId.equals(assigneeId) && a.status === 'processing'
         );
 
         if (!assignmentToReturn) {
-            throw new Error(`Bạn không có nhiệm vụ đang chờ xử lý với văn bản có ID: ${doc._id}.`);
+            throw new Error(`Bạn không có nhiệm vụ đang chờ xử lý với văn bản ${doc._id}.`);
         }
 
-        // Cập nhật trạng thái của nhiệm vụ hiện tại thành 'returned'
+        const assignerId = assignmentToReturn.assignedBy;
+        if (!assignerId) {
+            throw new Error(`Không tìm thấy người đã giao nhiệm vụ cho bạn trong văn bản ${doc._id}.`);
+        }
+
+        // Case đặc biệt: xử lý chính trả lại cho người tạo
+        if (doc.createdBy.equals(assignerId) && assignmentToReturn.role === 'mainProcessor') {
+            doc.currentAssignments.forEach(a => {
+                if (a.status !== 'returned') {
+                    a.status = 'returned';
+                }
+            });
+
+            doc.status = constants.DOCUMENT_STATUS.DRAFT;
+
+            doc.processingHistory.push(createHistoryEntry(
+                'mainProcessorReturnToCreator',
+                assigneeId,
+                {
+                    note: note || 'Người xử lý chính trả lại cho người tạo, văn bản trở về trạng thái khởi tạo.'
+                }
+            ));
+
+            doc.lastReturnReason = note || '';
+            doc.lastReturnedBy = assigneeId;
+            doc.lastReturnedAt = new Date();
+
+            await doc.save();
+            updatedDocuments.push(doc);
+            continue;
+        }
+
+        // Auto return tất cả cấp dưới theo cây role
+        const lowerRoles = getAllLowerRoles(processorUser.role.name);
+        console.log('Document Service 383: lowerRoles', lowerRoles);
+
+        const subAssignments = doc.currentAssignments.filter(a =>
+            a.userId?.role?.name &&
+            lowerRoles.includes(a.userId.role.name) && 
+            a.status !== 'returned'
+        );
+        console.log('Document Service 388: subAssignments', subAssignments);
+
+        for (const sub of subAssignments) {
+            sub.status = 'returned';
+        }
+
+        if (subAssignments.length > 0) {
+            doc.processingHistory.push(createHistoryEntry(
+                'returnDocument',
+                assigneeId,
+                {
+                    processors: subAssignments.map(sa => ({ userId: sa.userId })),
+                    note: 'Tự động trả lại các nhiệm vụ cấp dưới khi trả văn bản.'
+                }
+            ));
+        }
+
+        // Trả lại nhiệm vụ của mình cho người giao trực tiếp
         assignmentToReturn.status = 'returned';
 
-        // Ghi lại lịch sử trả lại
         doc.processingHistory.push(createHistoryEntry(
             'returnDocument',
             assigneeId,
-            { note: note }
+            { 
+                processors: [{ userId: assignerId }],
+                note: note || ''
+            }
         ));
 
-        // Cập nhật các trường hiển thị nhanh thông tin trả lại
         doc.lastReturnReason = note || '';
         doc.lastReturnedBy = assigneeId;
         doc.lastReturnedAt = new Date();
 
-        // Trạng thái chung của văn bản vẫn là PROCESSING để người khác xử lý
-        // nếu có nhiều nhiệm vụ cùng lúc
         doc.status = constants.DOCUMENT_STATUS.PROCESSING;
 
         await doc.save();
@@ -361,39 +437,88 @@ exports.returnDocuments = async (documentIds, assigneeId, note) => {
     return updatedDocuments;
 };
 
-exports.markAsComplete = async (documentIds, processorId) => {
+// Đánh dấu hoàn thành văn bản
+exports.markAsComplete = async (documentIds, processorId, note) => {
+    const processorUser = await User.findById(processorId).populate('role', 'name');
+    if (!processorUser) {
+        throw new Error('Không tìm thấy người dùng.');
+    }
+
     const documents = await Document.find({ _id: { $in: documentIds } });
     if (!documents || documents.length === 0) {
         throw new Error('Không tìm thấy văn bản nào.');
     }
 
     const updatedDocuments = [];
+
     for (const doc of documents) {
-        const currentAssignment = doc.currentAssignments.find(
-            a => a.userId.toString() === processorId.toString() && a.status === 'processing'
+        const isCreator = doc.createdBy.equals(processorId);
+        // Kiểm tra đã hoàn thành chưa, nếu rồi sẽ log ra thông báo
+        const alreadyCompletedAssignment = doc.currentAssignments.find(a =>
+            a.userId.equals(processorId) &&
+            a.status === 'completed'
         );
 
-        if (!currentAssignment) {
-            throw new Error(`Bạn không có nhiệm vụ đang chờ xử lý với văn bản có ID: ${doc._id}.`);
+        if (alreadyCompletedAssignment) {
+            throw new Error(`Bạn đã hoàn thành nhiệm vụ này trước đó.`);
         }
 
-        // Cập nhật trạng thái nhiệm vụ của người xử lý hiện tại
-        currentAssignment.status = 'completed';
+        // Kiểm tra xem có đang xử lý không, nếu đang xử lý thì mới được hoàn thành
+        const currentAssignment = doc.currentAssignments.find(a =>
+            a.userId.equals(processorId) &&
+            a.status === 'processing'
+        );
+        if (!isCreator && !currentAssignment) {
+            throw new Error(`Người dùng ${processorId} không có quyền hoàn thành văn bản ${doc._id}.`);
+        }
 
-        // Ghi lại lịch sử
+        if (currentAssignment?.role === 'inform') {
+            throw new Error(`Người dùng ${processorId} chỉ nhận để biết và không thể đánh dấu hoàn thành văn bản ${doc._id}.`);
+        }
+
+        // Lấy tất cả cấp dưới của user đang xử lý
+        const lowerRoles = getAllLowerRoles(processorUser.role.name);
+
+        // Lọc assignments do mình giao mà user đó có role hệ thống thuộc lowerRoles
+        const myAssignedLower = [];
+
+        for (const assignment of doc.currentAssignments) {
+            if (assignment.assignedBy.equals(processorId)) {
+                const assigneeUser = await User.findById(assignment.userId).populate('role', 'name');
+                if (lowerRoles.includes(assigneeUser.role.name)) {
+                    myAssignedLower.push(assignment);
+                }
+            }
+        }
+
+        console.log('Document Service 411: myAssignedLower', myAssignedLower);
+
+        // Nếu còn bất kỳ người cấp dưới mình giao chưa xong → chặn
+        const unfinishedLower = myAssignedLower.some(a => a.status !== 'completed');
+
+        if (unfinishedLower) {
+            throw new Error(`Không thể hoàn thành vì vẫn còn người ở cấp dưới do bạn giao chưa xử lý xong trong văn bản ${doc._id}.`);
+        }
+
+        // Nếu là mainProcessor → hoàn thành tất cả assignments
+        if (currentAssignment?.role === 'mainProcessor') {
+            doc.currentAssignments.forEach(a => a.status = 'completed');
+            doc.status = constants.DOCUMENT_STATUS.COMPLETED;
+        } else {
+            // Hoàn thành assignment của người hiện tại
+            currentAssignment.status = 'completed';
+
+            // Nếu tất cả đều hoàn thành → COMPLETED
+            const allCompleted = doc.currentAssignments.every(a => a.status === 'completed');
+            doc.status = allCompleted ? constants.DOCUMENT_STATUS.COMPLETED : constants.DOCUMENT_STATUS.PROCESSING;
+        }
+
+        // Lịch sử
         doc.processingHistory.push(createHistoryEntry(
             'completeProcessing',
             processorId,
-            { note: 'Nhiệm vụ đã được hoàn thành.' }
+            { note: note || 'Nhiệm vụ đã được hoàn thành.' }
         ));
-
-        // Nếu người xử lý chính đã hoàn thành, cập nhật trạng thái tổng thể của văn bản
-        const mainProcessorAssignment = doc.currentAssignments.find(a => a.role === 'mainProcessor');
-        if (mainProcessorAssignment && mainProcessorAssignment.status === 'completed') {
-            doc.status = constants.DOCUMENT_STATUS.COMPLETED;
-        } else {
-            doc.status = constants.DOCUMENT_STATUS.PROCESSING;
-        }
 
         await doc.save();
         updatedDocuments.push(doc);

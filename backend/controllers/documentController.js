@@ -122,7 +122,7 @@ exports.forwardProcessDocuments = async (req, res) => {
         return res.status(200).json({ documents: updatedDocuments });
     } catch (error) {
         console.error("Lỗi trong controller forwardProcessDocuments:", error);
-        return res.status(400).json({ message: error.message });
+        return res.status(400).json({ message: error?.message || "Có lỗi xảy ra." });
     }
 };
 
@@ -140,7 +140,7 @@ exports.returnDocuments = async (req, res) => {
         return res.status(200).json({ documents: updatedDocuments });
     } catch (error) {
         console.error("Lỗi trong controller returnDocuments:", error);
-        return res.status(400).json({ message: error.message });
+        return res.status(400).json({ message: error?.message || "Có lỗi xảy ra." });
     }
 };
 
@@ -158,6 +158,6 @@ exports.markAsComplete = async (req, res) => {
         return res.status(200).json({ documents: updatedDocuments });
     } catch (error) {
         console.error("Lỗi trong controller markAsComplete:", error);
-        return res.status(400).json({ message: error.message });
+        return res.status(400).json({ message: error?.message || "Có lỗi xảy ra." });
     }
 };
