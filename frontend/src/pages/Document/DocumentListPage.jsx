@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import {
@@ -19,10 +19,12 @@ import DataTable from "../../components/Table/DataTable";
 import DocumentProcessPage from './DocumentProcessPage';
 
 import { useDocuments } from '../../hooks/useDocuments';
+import { usePermissions } from '../../hooks/usePermissions';
+import constants from '../../utils/constants';
 
 // Mock data for filter options
 const mockDocumentTypes = [
-  { value: '', label: 'Tất cả loại VB' },
+  { value: '', label: 'Tất cả loại VB' }, 
   { value: 'Báo cáo', label: 'Báo cáo' },
   { value: 'Công văn', label: 'Công văn' },
   { value: 'Quyết định', label: 'Quyết định' },
@@ -39,38 +41,17 @@ const mockUrgencyLevels = [
 
 const mockConfidentialityLevels = [
   { value: '', label: 'Tất cả mức độ bảo mật' },
-  { value: 'Bình thường', label: 'Bình thường' },
+  { value: 'Thường', label: 'Thường' },
   { value: 'Mật', label: 'Mật' },
   { value: 'Tối mật', label: 'Tối mật' },
 ];
 
-const mockStatuses = [
-  // Trạng thái mặc định cho tất cả các văn bản
+const STATUS_TABS = [
   { value: '', label: 'Tất cả trạng thái' },
-
-  // Trạng thái khi văn bản mới được tạo, chờ gửi đi hoặc xử lý
-  { value: 'Draft', label: 'Khởi tạo' },
-
-  // Trạng thái khi văn bản đang chờ sự phê duyệt từ cấp trên
-  { value: 'PendingApproval', label: 'Chờ duyệt' },
-
-  // Trạng thái khi văn bản đã được duyệt và đang được xử lý bởi một hoặc nhiều người
-  { value: 'Processing', label: 'Đang xử lý' },
-
-  // Trạng thái khi văn bản đã được hoàn thành tất cả các bước trong quy trình
-  { value: 'Completed', label: 'Hoàn thành' },
-
-  // Trạng thái khi văn bản bị từ chối phê duyệt
-  { value: 'Rejected', label: 'Bị từ chối' },
-
-  // Trạng thái khi văn bản bị hủy bỏ trước khi hoàn thành
-  { value: 'Canceled', label: 'Hủy' },
-
-  // Trạng thái đặc thù cho các văn bản phối hợp giữa các đơn vị
-  { value: 'Coordination', label: 'Phối hợp' },
-
-  // Trạng thái đặc thù cho các văn bản chỉ cần nhận để đọc và không cần xử lý
-  { value: 'ForInformation', label: 'Nhận để biết' },
+  { value: constants.DOCUMENT_STATUS.DRAFT, label: 'Khởi tạo' },
+  { value: constants.DOCUMENT_STATUS.PROCESSING, label: 'Đang xử lý' },
+  { value: constants.DOCUMENT_STATUS.RETURNED, label: 'Trả lại' },
+  { value: constants.DOCUMENT_STATUS.COMPLETED, label: 'Hoàn thành' },
 ];
 
 
@@ -94,9 +75,10 @@ const ordersColumns = [
   { key: 'action', header: 'Thao tác', sortable: false, widthClass: 'min-w-[120px] text-center', sticky: true },
 ];
 
-
+  
 const DocumentListPage = () => {
   const { documents, loading, error, fetchDocuments, deleteDocuments } = useDocuments();
+  const { hasAnyRole, hasRole } = usePermissions();
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState('');
@@ -192,23 +174,15 @@ const DocumentListPage = () => {
     setFilterRecivedDateTo('');
   };
 
-  // Sắp xếp các văn bản theo recordedDate (Ngày ghi sổ) mới nhất đến cũ nhất
-  const sortedDocuments = useMemo(() => {
-    if (!documents) {
-      return [];
-    }
-    // Tạo bản sao để không làm thay đổi mảng ban đầu
-    const sorted = [...documents].sort((a, b) => {
-      return new Date(b.recordedDate) - new Date(a.recordedDate);
-    });
-    return sorted;
-  }, [documents]); 
+  
 
   // Calculate total pages and data for the current page
-  const totalPages = Math.ceil(sortedDocuments.length / itemsPerPage);
+  const totalPages = Math.ceil(documents.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentData = sortedDocuments.slice(startIndex, endIndex);
+  const currentData = documents.slice(startIndex, endIndex);
+
+  const returnedCount = documents.filter(d => d.status === constants.DOCUMENT_STATUS.RETURNED).length;
 
   // Event handlers for pagination
   const handleNextPage = () => {
@@ -383,13 +357,14 @@ const DocumentListPage = () => {
                 </button>
               </>
             ) : (
-              // RENDER NÚT THÊM KHI KHÔNG CÓ GÌ ĐƯỢC CHỌN
-              <button
-                onClick={handleCreateDocument}
-                className="h-8 flex items-center px-1 py-2 text-xs font-medium text-white bg-gradient-to-tl from-sky-300 from-30% to-sky-500 border border-transparent rounded-lg shadow-sm hover:bg-blue-700">
-                <PlusIcon className="h-5 w-5 mr-2" />
-                Thêm văn bản đến
-              </button>
+              hasAnyRole([constants.ROLES.ADMIN, constants.ROLES.VAN_THU]) && (
+                <button
+                  onClick={handleCreateDocument}
+                  className="h-8 flex items-center px-1 py-2 text-xs font-medium text-white bg-gradient-to-tl from-sky-300 from-30% to-sky-500 border border-transparent rounded-lg shadow-sm hover:bg-blue-700">
+                  <PlusIcon className="h-5 w-5 mr-2" />
+                  Thêm văn bản đến
+                </button>
+              )
             )}
           </div>
         </div>
@@ -431,17 +406,30 @@ const DocumentListPage = () => {
 
         {/* Tabs */}
         <div className="flex border-b border-gray-200 mb-2 overflow-x-auto whitespace-nowrap">
-          {mockStatuses.map(tab => (
+          {STATUS_TABS.filter(tab => {
+            // Chỉ hiển thị 'Khởi tạo' cho admin và văn thư
+            if (tab.value === constants.DOCUMENT_STATUS.DRAFT) {
+              return hasAnyRole([constants.ROLES.ADMIN, constants.ROLES.VAN_THU]);
+            }
+            return true;
+          }).map(tab => (
             <button
               key={tab.value}
               onClick={() => setActiveTab(tab.value)}
-              className={`px-6 py-1 border-b-2 font-medium text-xs
+              className={`relative px-6 py-1 border-b-2 font-medium text-xs
                   ${activeTab === tab.value
                   ? 'border-blue-600 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
             >
-              {tab.label}
+              {tab.value === constants.DOCUMENT_STATUS.RETURNED ? (
+                <span className="relative inline-flex items-center">
+                  <span className="relative">{tab.label}</span>
+                  {returnedCount > 0 && (
+                    <span className="absolute top-0 right-0 text-[10px] font-semibold text-red-500 z-10">{returnedCount}</span>
+                  )}
+                </span>
+              ) : tab.label}
             </button>
           ))}
         </div>

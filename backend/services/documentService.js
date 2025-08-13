@@ -135,7 +135,9 @@ exports.searchAndFilterDocuments = async (queryOptions, user) => {
         let query = {};
 
         if (user && user.roleName !== 'admin') {
+            // Chỉ hiển thị văn bản mà người dùng hiện tại đang được giao xử lý và trạng thái nhiệm vụ đang chờ (pending)
             query['assignedTo.userId'] = user.id;
+            query['assignedTo.status'] = 'pending';
         }
 
         if (searchText) {
@@ -208,7 +210,8 @@ exports.searchAndFilterDocuments = async (queryOptions, user) => {
             }
         }
 
-        const documents = await Document.find(query);
+        // Sắp xếp giảm dần theo ngày nhận (mới nhất trước)
+        const documents = await Document.find(query).sort({ recivedDate: -1 });
         return documents;
     } catch (error) {
         console.error("Error searching and filtering documents:", error);
@@ -322,11 +325,11 @@ exports.returnDocuments = async (documentIds, assigneeId, note) => {
             a => a._id.toString() !== assignmentToReturn._id.toString()
         );
 
-        // Ghi lại lịch sử (hành động này vẫn giữ nguyên)
+        // Ghi lại lịch sử: người liên quan là người được trả lại (previousAssignerId)
         doc.processingHistory.push(createHistoryEntry(
             constants.ACTIONS.RETURN,
             assigneeId,
-            { note: note }
+            { note: note, assigneeId: previousAssignerId }
         ));
 
         // Gán lại nhiệm vụ cho người đã giao trước đó với trạng thái 'rejected'

@@ -21,8 +21,8 @@ const LoginPage = () => {
         <div className="w-full max-w-sm h-3/5">
 
           <div className="flex flex-col mb-8">
-            <div className="w-auto h-10 flex items-center text-gray-800 text-3xl font-bold mb-8">
-              DocuFlow
+            <div className="w-auto flex items-center mb-8">
+              <img src={images.logoDocuFlow} alt="DocuFlow logo" className="h-20 w-auto" />
             </div>
             <h2 className="text-2xl font-semibold text-gray-800 mb-1">
               Đăng nhập
