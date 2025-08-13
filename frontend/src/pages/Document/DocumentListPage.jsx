@@ -214,7 +214,7 @@ const DocumentListPage = () => {
     if (window.confirm(`Bạn có chắc chắn muốn xóa văn bản không?`)) {
       deleteDocuments([document._id]);
       setSelectedDocumentIds([]);
-      console.log('Xóa văn bản có ID:', document._id);
+      console.log('Xóa văn bản có ID:', [document._id]);
     } else {
       console.log('Hủy xóa.');
     }

@@ -1,9 +1,9 @@
 import React from 'react';
 import { formatDate } from '../../utils/helper';
 
-const AssignedUsersList = ({ assignedTo }) => {
-    const visibleAssignments = Array.isArray(assignedTo)
-        ? assignedTo.filter(a => a.status !== 'rejected')
+const AssignedUsersList = ({ currentAssignments }) => {
+    const visibleAssignments = Array.isArray(currentAssignments)
+        ? currentAssignments.filter(a => a.status !== 'rejected')
         : [];
 
     if (!visibleAssignments || visibleAssignments.length === 0) {
@@ -20,16 +20,18 @@ const AssignedUsersList = ({ assignedTo }) => {
     // Hàm để chuyển đổi giá trị tiếng Anh sang tiếng Việt
     const getTranslatedValue = (value) => {
         switch (value) {
-            case 'read':
-                return 'Xử lý';
-            case 'collaborate':
+            case 'mainProcessor':
+                return 'Xử lý chính';
+            case 'collaborator':
                 return 'Phối hợp';
             case 'inform':
                 return 'Nhận để biết';
-            case 'pending':
-                return 'Chờ xử lý';
+            case 'processing':
+                return 'Đang xử lý';
             case 'completed':
                 return 'Hoàn thành';
+            case 'returned':
+                return 'Bị trả lại';
             default:
                 return value;
         }

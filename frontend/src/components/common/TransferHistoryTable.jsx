@@ -2,40 +2,25 @@ import React from 'react';
 import { formatDate } from '../../utils/helper';
 
 const getActionLabel = (action) => {
-    switch (action) {
-        case 'delegate':
-            return 'Chuyển xử lý';
+    const labels = {
+        createDocument: 'Tạo văn bản',
+        forwardProcessing: 'Chuyển xử lý',
+        completeProcessing: 'Hoàn thành',
+        returnDocument: 'Trả lại',
+    };
 
-        case 'addProcessor':
-            return 'Thêm người xử lý';
-        case 'update-processor':
-        case 'updateAssignment':
-            return 'Cập nhật người xử lý';
-        case 'return':
-            return 'Trả lại';
-        case 'recall':
-            return 'Thu hồi';
-        case 'mark-complete':
-        case 'markComplete':
-            return 'Hoàn thành';
-        default:
-            return 'Không xác định';
-    }
+    return labels[action] || 'Không xác định';
 };
 
 const getActionColor = (action) => {
     switch (action) {
-        case 'delegate':
-        case 'add-processor':
-        case 'addProcessor':
-        case 'update-processor':
-        case 'updateAssignment':
+        case 'createDocument':
+            return 'bg-blue-100 text-blue-800';
+        case 'forwardProcessing':
             return 'bg-indigo-100 text-indigo-800';
-        case 'mark-complete':
-        case 'markComplete':
+        case 'completeProcessing':
             return 'bg-green-100 text-green-800';
-        case 'return':
-        case 'recall':
+        case 'returnDocument':
             return 'bg-yellow-100 text-yellow-800';
         default:
             return 'bg-gray-100 text-gray-800';
@@ -73,9 +58,9 @@ const ProcessingHistoryTable = ({ history = [] }) => {
                             <th scope="col" className="w-32 px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Thời gian
                             </th>
-                            <th scope="col" className="w-auto px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            {/* <th scope="col" className="w-auto px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Ghi chú
-                            </th>
+                            </th> */}
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -101,11 +86,11 @@ const ProcessingHistoryTable = ({ history = [] }) => {
                                 <td className="w-32 px-2 py-4 text-sm text-gray-500 truncate">
                                     {item.timestamp ? formatDate(item.timestamp) : 'N/A'}
                                 </td>
-                                <td className="w-auto px-2 py-4 text-sm text-gray-500">
+                                {/* <td className="w-auto px-2 py-4 text-sm text-gray-500">
                                     <div className="truncate w-full max-w-xs">
                                         {item.details?.note || 'Không có ghi chú'}
                                     </div>
-                                </td>
+                                </td> */}
                             </tr>
                         ))}
                     </tbody>

@@ -195,7 +195,7 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, }) => {
                                                         <span className="text-xs text-gray-500">{user.unit}</span>
                                                     </div>
                                                 </td>
-                                                {['read', 'collaborate', 'inform'].map(role => (
+                                                {['mainProcessor', 'collaborator', 'inform'].map(role => (
                                                     <td key={role} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                                                         <input
                                                             type="checkbox"
@@ -229,8 +229,8 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, }) => {
                                                 <td className="px-6 py-4 whitespace-nowrap text-xs text-center font-medium text-gray-900">{index + 1}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500">{user.name}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500">
-                                                    {userRoles[user._id] === 'read' ? 'Chọn đọc/xử lý' :
-                                                        userRoles[user._id] === 'collaborate' ? 'Phối hợp' : 'Nhận để biết'}
+                                                    {userRoles[user._id] === 'mainProcessor' ? 'Xử lý chính' :
+                                                        userRoles[user._id] === 'collaborator' ? 'Phối hợp' : 'Nhận để biết'}
                                                 </td>
                                                 <td className="px-6 py-2 whitespace-nowrap text-xs text-center">
                                                     <button onClick={() => handleRemoveUser(user._id)} className="text-red-600 hover:text-red-900">
