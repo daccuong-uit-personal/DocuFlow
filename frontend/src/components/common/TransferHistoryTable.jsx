@@ -80,11 +80,11 @@ const ProcessingHistoryTable = ({ history = [] }) => {
                                 <td className="w-40 px-2 py-4 text-sm text-gray-500 truncate">
                                     {item.details && item.details.processors && item.details.processors.length > 0
                                         ? item.details.processors.map(p => p.userId?.name).join(', ')
-                                        : item.details?.assigneeId?.name || 'N/A'
+                                        : item.details?.assigneeId?.name || ''
                                     }
                                 </td>
                                 <td className="w-32 px-2 py-4 text-sm text-gray-500 truncate">
-                                    {item.timestamp ? formatDate(item.timestamp) : 'N/A'}
+                                    {item.timestamp ? formatDate(item.timestamp) : ''}
                                 </td>
                                 {/* <td className="w-auto px-2 py-4 text-sm text-gray-500">
                                     <div className="truncate w-full max-w-xs">

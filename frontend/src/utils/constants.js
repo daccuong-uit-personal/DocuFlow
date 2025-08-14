@@ -18,15 +18,9 @@ const constants = {
     },
     DOCUMENT_STATUS: {
         DRAFT: "Draft",
-        PENDING_APPROVAL: "PendingApproval",
         PROCESSING: "Processing",
         COMPLETED: "Completed",
-        REJECTED: "Rejected",
-        CANCELED: "Canceled",
-        RETURNED: "Returned",
-        RECALLED: "Recalled",
-        COORDINATION: "Coordination",
-        FOR_INFORMATION: "ForInformation",
+        RETURNED: "returned",
     },
     RECEIVING_METHOD: {
         ONLINE: "Online",
@@ -43,13 +37,9 @@ const constants = {
         SECRET: "Tối mật"
     },
     ACTIONS: {
-        DELEGATE: "delegate", // Chuyển giao hoàn toàn quyền xử lý
-        ADD_PROCESSOR: "addProcessor", // Thêm người phối hợp
-        MARK_COMPLETE: "markComplete", // Đánh dấu đã hoàn thành
-        RECALL: "recall", // Thu hồi văn bản
-        UPDATE_ASSIGNMENT: 'updateAssignment', // Cập nhật thông tin giao việc (ví dụ: deadline)
-        RETURN: 'return', // Trả lại văn bản cho người giao việc trước đó
-        REJECT: 'reject' // Từ chối phê duyệt văn bản
+        DELEGATE: "delegate",
+        MARK_COMPLETE: "markComplete",
+        RETURN: 'return',
     },
 };
 

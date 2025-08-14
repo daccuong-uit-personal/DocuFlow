@@ -3,82 +3,75 @@
 const User = require('../models/User');
 const Department = require('../models/Department');
 const Role = require('../models/Roles');
+const BusinessError = require('../utils/BusinessError');
 
 // Xử lý các thao tác với người dùng
 
 exports.getUsers = async (queryOptions) => {
-    try {
-        const {
-            searchText,
-            userName,
-            departmentID,
-            gender,
-            role,
-            isLocked,
-        } = queryOptions;
+    const {
+        searchText,
+        userName,
+        departmentID,
+        gender,
+        role,
+        isLocked,
+    } = queryOptions;
 
-        let query = {};
+    let query = {};
 
-        // Lọc theo từ khóa tìm kiếm trên nhiều trường
-        if (searchText) {
-            const searchRegex = new RegExp(searchText, 'i');
-            query.$or = [
-                { userName: searchRegex },
-                { name: searchRegex },
-                { phoneNumber: searchRegex },
-                { address: searchRegex },
-            ];
-        }
-
-        // Lọc theo các trường cụ thể
-        if (userName) {
-            query.userName = new RegExp(userName, 'i');
-        }
-        if (gender) {
-            query.gender = gender;
-        }
-        if (isLocked) {
-            query.isLocked = isLocked === 'true';
-        }
-        if (role && role.length > 0) {
-            const foundRoles = await Role.find({ name: { $in: role } });
-            const roleIds = foundRoles.map(r => r._id);
-            query.role = { $in: roleIds };
-        }
-
-        if (departmentID) {
-            const foundDepartment = await Department.findOne({ name: departmentID });
-            if (foundDepartment) {
-                query.departmentID = foundDepartment._id;
-            } else {
-                query.departmentID = null;
-            }
-        }
-        // Thực hiện truy vấn với populate để lấy thông tin chi tiết
-        const users = await User.find(query)
-            .populate('departmentID', 'name headOfDepartment viceHeadOfDepartment')
-            .populate('role', 'name description');
-
-        return users;
-    } catch (error) {
-        console.error("Lỗi khi tìm kiếm và lọc người dùng:", error);
-        throw error;
+    if (searchText) {
+        const searchRegex = new RegExp(searchText, 'i');
+        query.$or = [
+            { userName: searchRegex },
+            { name: searchRegex },
+            { phoneNumber: searchRegex },
+            { address: searchRegex },
+        ];
     }
+
+    if (userName) {
+        query.userName = new RegExp(userName, 'i');
+    }
+    if (gender) {
+        query.gender = gender;
+    }
+    if (typeof isLocked !== 'undefined') {
+        query.isLocked = isLocked === 'true';
+    }
+    if (role && role.length > 0) {
+        const foundRoles = await Role.find({ name: { $in: role } });
+        if (!foundRoles.length) {
+            throw new BusinessError('Không tìm thấy vai trò phù hợp.', 404);
+        }
+        query.role = { $in: foundRoles.map(r => r._id) };
+    }
+
+    if (departmentID) {
+        const foundDepartment = await Department.findOne({ name: departmentID });
+        if (foundDepartment) {
+            query.departmentID = foundDepartment._id;
+        } else {
+            query.departmentID = null;
+        }
+    }
+
+    const users = await User.find(query)
+        .populate('departmentID', 'name headOfDepartment viceHeadOfDepartment')
+        .populate('role', 'name description');
+
+    return users;
 };
 
 exports.getUserById = async (userId) => {
-    try {
-        const user = await User.findById(userId)
-            .populate('departmentID', 'name')
-            .populate('role', 'name description');
-        if (!user) {
-            throw new Error('User not found.');
-        }
-        return user;
-    } catch (error) {
-        console.error("Lỗi khi tìm kiếm người dùng theo ID:", error);
-        throw error;
+    const user = await User.findById(userId)
+        .populate('departmentID', 'name')
+        .populate('role', 'name description');
+
+    if (!user) {
+        throw new BusinessError('Không tìm thấy người dùng.', 404);
     }
+
+    return user;
 };
 
 exports.updateUser = async (userId, updatedData, requester) => {

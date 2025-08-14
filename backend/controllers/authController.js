@@ -1,20 +1,18 @@
-// Xử lý logic đăng nhập, đăng ký
-
-const { login, changePassword } = require('../services/authService');
-
+// controllers/authController.js
 const authService = require('../services/authService');
 
-exports.login = async (req, res) => {
+exports.login = async (req, res, next) => {
     try {
         const { userName, password } = req.body;
-        const {user, token} = await authService.login(userName, password);
+        const { user, token } = await authService.login(userName, password);
 
         res.status(200).json({ 
             message: 'Đăng nhập thành công',
-            content: user, token
+            content: user,
+            token
         });
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        next(error); // để errorHandler xử lý
     }
 };
 
@@ -22,7 +20,7 @@ exports.logout = (req, res) => {
     res.status(200).json({ message: 'Đăng xuất thành công' });
 };
 
-exports.changePassword = async (req, res) => {
+exports.changePassword = async (req, res, next) => {
     try {
         const { oldPassword, newPassword } = req.body;
         const userId = req.user.id;
@@ -30,11 +28,11 @@ exports.changePassword = async (req, res) => {
         await authService.changePassword(userId, oldPassword, newPassword);
         res.status(200).json({ message: 'Đổi mật khẩu thành công' });
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        next(error);
     }
 };
 
-exports.registerUser = async (req, res) => {
+exports.registerUser = async (req, res, next) => {
     try {
         const newUser = await authService.register(req.body);
         res.status(201).json({
@@ -50,7 +48,7 @@ exports.registerUser = async (req, res) => {
                 departmentID: newUser.departmentID
             }
         });
-    } catch (err) {
-        res.status(400).json({ error: err.message });
+    } catch (error) {
+        next(error);
     }
 };

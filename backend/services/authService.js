@@ -1,98 +1,89 @@
-// Logic nghiệp vụ cho xác thực
-
+// services/authService.js
 const { JWT_SECRET } = require('../config/config');
 const User = require('../models/User');
 const { hashPassword, comparePassword } = require('../utils/hashPassword');
 const jwt = require('jsonwebtoken');
+const BusinessError = require('../utils/BusinessError');
 
 exports.login = async (userName, password) => {
-    try {
-        const user = await User.findOne({ userName }).select('+password').populate({
+    const user = await User.findOne({ userName })
+        .select('+password')
+        .populate({
             path: 'role',
             populate: {
                 path: 'permissions',
                 model: 'Permission'
             }
-        }).populate('departmentID');
+        })
+        .populate('departmentID');
 
-        if (!user) {
-            throw new Error('Tên đăng nhập hoặc mật khẩu không đúng.');
-        }
-
-        const isMatch = await comparePassword(password, user.password);
-        if (!isMatch) {
-            throw new Error('Tên đăng nhập hoặc mật khẩu không đúng.');
-        }
-
-        // Kiểm tra tài khoản có bị khóa không
-        if (user.isLocked) {
-            throw new Error('Tài khoản này đã bị khóa!');
-        }
-
-        const permissions = user.role.permissions.map(perm => perm.name);
-
-        const payload = {
-            id: user._id,
-            username: user.userName,
-            roleId: user.role.id,
-            roleName: user.role.name,
-            roleDescription: user.role.description,
-            permissions: permissions
-        };
-
-        const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '10h' });
-
-        // Cập nhật lastLogin
-        user.lastLogin = new Date();
-        await user.save();
-
-        user.password = undefined;
-        return { user, token };
-    } catch (error) {
-        console.error("Lỗi khi đăng nhập:", error.message);
-        throw new Error(error.message);
+    if (!user) {
+        throw new BusinessError('Tên đăng nhập hoặc mật khẩu không đúng.', 401);
     }
+
+    const isMatch = await comparePassword(password, user.password);
+    if (!isMatch) {
+        throw new BusinessError('Tên đăng nhập hoặc mật khẩu không đúng.', 401);
+    }
+
+    if (user.isLocked) {
+        throw new BusinessError('Tài khoản này đã bị khóa!', 403);
+    }
+
+    const permissions = user.role.permissions.map(perm => perm.name);
+
+    const payload = {
+        id: user._id,
+        username: user.userName,
+        roleId: user.role.id,
+        roleName: user.role.name,
+        roleDescription: user.role.description,
+        permissions
+    };
+
+    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '10h' });
+
+    // Cập nhật lastLogin
+    user.lastLogin = new Date();
+    await user.save();
+
+    user.password = undefined;
+    return { user, token };
 };
 
 exports.changePassword = async (userId, oldPassword, newPassword) => {
-    try {
-        const user = await User.findById(userId).select('+password');
-        if (!user) {
-            throw new Error('Người dùng không tồn tại.');
-        }
-
-        const isMatch = await comparePassword(oldPassword, user.password);
-        if (!isMatch) {
-            throw new Error('Mật khẩu cũ không đúng.');
-        }
-
-        const hashedNewPassword = await hashPassword(newPassword);
-
-        user.password = hashedNewPassword;
-        await user.save();
-
-        console.log(`Mật khẩu của người dùng ${user.username} đã được đổi thành công.`);
-    } catch (error) {
-        console.error("Lỗi khi đổi mật khẩu:", error.message);
-        throw new Error(error.message);
+    const user = await User.findById(userId).select('+password');
+    if (!user) {
+        throw new BusinessError('Người dùng không tồn tại.', 404);
     }
+
+    const isMatch = await comparePassword(oldPassword, user.password);
+    if (!isMatch) {
+        throw new BusinessError('Mật khẩu cũ không đúng.', 400);
+    }
+
+    const isSameAsOld = await comparePassword(newPassword, user.password)
+    if (isSameAsOld) {
+        throw new BusinessError('Mật khẩu mới không được trùng mật khẩu cũ.', 400);
+    }
+
+    user.password = await hashPassword(newPassword);
+    await user.save();
+
+    return { message: 'Đổi mật khẩu thành công' };
 };
 
 exports.register = async (data) => {
-    try {
-        const existingUser = await User.findOne({ userName: data.userName });
-        if (existingUser) {
-            throw new Error('Tên đăng nhập đã tồn tại');
-        }
-
-        const hashedPassword = await hashPassword(data.password);
-        const user = new User({
-            ...data,
-            password: hashedPassword
-        });
-
-        return await user.save();
-    } catch (error) {
-        throw new Error(error.message);
+    const existingUser = await User.findOne({ userName: data.userName });
+    if (existingUser) {
+        throw new BusinessError('Tên đăng nhập đã tồn tại', 400);
     }
-}
+
+    const hashedPassword = await hashPassword(data.password);
+    const user = new User({
+        ...data,
+        password: hashedPassword
+    });
+
+    return await user.save();
+};

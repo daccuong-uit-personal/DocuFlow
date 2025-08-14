@@ -50,7 +50,7 @@ const STATUS_TABS = [
   { value: '', label: 'Tất cả trạng thái' },
   { value: constants.DOCUMENT_STATUS.DRAFT, label: 'Khởi tạo' },
   { value: constants.DOCUMENT_STATUS.PROCESSING, label: 'Đang xử lý' },
-  { value: constants.DOCUMENT_STATUS.RETURNED, label: 'Trả lại' },
+  { value: constants.DOCUMENT_STATUS.RETURNED, label: 'Bị trả lại' },
   { value: constants.DOCUMENT_STATUS.COMPLETED, label: 'Hoàn thành' },
 ];
 
