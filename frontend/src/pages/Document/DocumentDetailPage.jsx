@@ -17,8 +17,11 @@ const DocumentDetailPage = () => {
     const [isProcessModalOpen, setIsProcessModalOpen] = useState(false);
 
     const [documentIdForModal, setDocumentIdForModal] = useState(null);
-
     const [modalMode, setModalMode] = useState('completed');
+
+    const handleDelegatedSuccess = () => {
+        setHasDelegated(true);
+    };
 
     const handleOpenProcessModal = (docId, mode) => {
         console.log('23 DocumentDetailPage: Open process modal', docId, mode);
@@ -32,7 +35,6 @@ const DocumentDetailPage = () => {
         setDocumentIdForModal(null);
         setModalMode('');
         if (id) {
-            // Refetch để đảm bảo cập nhật lịch sử xử lý ngay khi đóng modal
             fetchDocumentById(id);
         }
     };
@@ -71,6 +73,7 @@ const DocumentDetailPage = () => {
                 documentIds={documentIdForModal ? [documentIdForModal] : []}
                 mode={modalMode}
                 document={selectedDocument}
+                onDelegateSuccess={handleDelegatedSuccess}
             />
         </div>
     );

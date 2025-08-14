@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { usePermissions } from '../../hooks/usePermissions';
 import { useNavigate } from 'react-router-dom';
 import userService from '../../services/userService';
+import { useAuth } from '../../hooks/useAuth';
 
 import AttachmentsList from '../../components/common/AttachmentsList'
 import TransferHistoryTable from '../../components/common/TransferHistoryTable';
@@ -10,6 +11,7 @@ import AssignedUsersList from '../../components/common/AssignedUsersList';
 
 const DocumentFormPage = ({ initialData, isEditMode = false, onSave, onProcessClick }) => {
     const navigate = useNavigate();
+    const { user } = useAuth()
 
     const [formData, setFormData] = useState(
         (initialData?.document)
@@ -18,6 +20,10 @@ const DocumentFormPage = ({ initialData, isEditMode = false, onSave, onProcessCl
     );
 
     const [departments, setDepartments] = useState([]);
+
+    const hasDelegated = initialData?.document?.processingHistory?.some(
+        h => h.action === 'forwardProcessing' && h.actorId?._id === user._id
+    );
 
     const handleEditClick = () => {
         console.log('Bấm nút "Chỉnh sửa"');
@@ -191,10 +197,15 @@ const DocumentFormPage = ({ initialData, isEditMode = false, onSave, onProcessCl
                                     Hoàn thành văn bản
                                 </button>
                             )}
-                            <button onClick={() => onProcessClick(initialData.document._id, 'delegate')}
-                                className="h-8 flex items-center px-4 py-2 text-xs font-medium text-white bg-gradient-to-tl from-sky-300 from-30% to-sky-500 border border-gray-300 rounded-lg shadow-sm hover:bg-blue-600">
-                                Chuyển xử lý
-                            </button>
+                            {!isEditMode && !hasDelegated && (
+                                <button
+                                    onClick={() => onProcessClick(initialData.document._id, 'delegate')}
+                                    className="h-8 flex items-center px-4 py-2 text-xs font-medium text-white bg-gradient-to-tl from-sky-300 from-30% to-sky-500 border border-gray-300 rounded-lg shadow-sm hover:bg-blue-600"
+                                >
+                                    Chuyển xử lý
+                                </button>
+                            )}
+
                             {!hasRole('van_thu') && (
                                 <button onClick={() => onProcessClick(initialData.document._id, 'return')}
                                     className="h-8 flex items-center px-4 py-2 text-xs font-medium text-white bg-gradient-to-tl from-sky-300 from-30% to-sky-500 border border-gray-300 rounded-lg shadow-sm hover:bg-yellow-600">

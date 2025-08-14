@@ -17,7 +17,7 @@ const roleMapping = {
     recall: 'Thu hồi',
 };
 
-const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, document }) => {
+const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, document, onDelegateSuccess }) => {
     const { user } = useAuth();
     const { users, fetchUsers } = useUsers();
     const {
@@ -34,7 +34,6 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, document }) =
     const [deadline, setDeadline] = useState('');
     const [title, setTitle] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [isEditMode, setIsEditMode] = useState(false);
 
     useEffect(() => {
         setTitle(roleMapping[mode] || 'Thao tác văn bản');
@@ -63,7 +62,7 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, document }) =
                 });
 
                 setUserRoles(preRolesAll);
-                setSelectedUsers(preSelectedAll);
+                setSelectedUsers([]);
 
                 console.log('68 DocumentProcessPage: assignments', preSelectedAll);
                 console.log('69 DocumentProcessPage: User roles', preRolesAll);
@@ -78,7 +77,6 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, document }) =
             setNote('');
             setDeadline('');
             setIsLoading(false);
-            setIsEditMode(false);
         }
     }, [isOpen]);
 
@@ -108,8 +106,6 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, document }) =
 
         setUserRoles(newRoles);
         setSelectedUsers(newSelectedUsers);
-        console.log('103 DocumentProcessPage: Selected users', newSelectedUsers);
-        console.log('104 DocumentProcessPage: User roles', newRoles);
     };
 
     const handleRemoveUser = (userId) => {
@@ -123,7 +119,6 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, document }) =
 
     const handleAction = async () => {
         const finalDocumentIds = Array.isArray(documentIds) ? documentIds : [documentIds];
-
         switch (mode) {
             case 'delegate':
                 if (selectedUsers.length === 0) {
@@ -133,7 +128,7 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, document }) =
                 const delegatedProcessors = selectedUsers.map(u => ({
                     userId: u._id,
                     role: userRoles[u._id],
-                    status: 'pending',
+                    status: 'processing',
                     deadline
                 })).filter(p => p.role);
 
@@ -143,6 +138,10 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, document }) =
                 }
 
                 await processDocuments(finalDocumentIds, delegatedProcessors, note, deadline);
+                onClose();
+                if (typeof onDelegateSuccess === 'function') {
+                    onDelegateSuccess();
+                }
                 break;
             case 'return':
                 await returnDocuments(finalDocumentIds, note);
@@ -171,6 +170,7 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, document }) =
         onClose();
     };
 
+    const noAssignments = !document?.document?.currentAssignments || document.document.currentAssignments.length === 0;
 
     const renderContent = () => {
         // ... (phần UI không thay đổi)
@@ -216,7 +216,7 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, document }) =
                                                 {['mainProcessor', 'collaborator', 'inform'].map(role => {
                                                     const isMainProcessor = role === 'mainProcessor';
                                                     const isAssignedRole = userRoles[user._id] === role;
-
+                                                    const hasMainProcessor = Object.values(userRoles).includes('mainProcessor');
                                                     return (
                                                         <td
                                                             key={role}
@@ -226,7 +226,12 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, document }) =
                                                                 type="checkbox"
                                                                 className="h-4 w-4 text-sky-600 border-gray-300 rounded focus:ring-sky-500"
                                                                 checked={isAssignedRole}
-                                                                disabled={userRoles[user._id] === 'mainProcessor' || isMainProcessor || !isEditMode}
+                                                                disabled={
+                                                                    role === 'mainProcessor'
+                                                                        ? (userRoles[user._id] === 'mainProcessor' || (hasMainProcessor && userRoles[user._id] !== 'mainProcessor'))
+                                                                        // : !noAssignments
+                                                                        : false 
+                                                                }
                                                                 onChange={() => handleSelectUser(user, role)}
                                                             />
                                                         </td>
@@ -261,7 +266,7 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, document }) =
                                                 </td>
                                                 <td className="px-6 py-2 whitespace-nowrap text-xs text-center">
                                                     <div className="flex justify-center items-center h-5 w-5">
-                                                        {isEditMode && userRoles[user._id] !== 'mainProcessor' ? (
+                                                        {(userRoles[user._id] !== 'mainProcessor') ? (
                                                             <button
                                                                 onClick={() => handleRemoveUser(user._id)}
                                                                 className="text-red-600 hover:text-red-900 h-5 w-5 flex items-center justify-center"
@@ -271,11 +276,7 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, document }) =
                                                                 </svg>
                                                             </button>
                                                         ) : (
-                                                            <svg
-                                                                className="h-4 w-4 text-gray-300"
-                                                                fill="currentColor"
-                                                                viewBox="0 0 20 20"
-                                                            >
+                                                            <svg className="h-4 w-4 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
                                                                 <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
                                                             </svg>
                                                         )}
@@ -309,7 +310,7 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, document }) =
                                 <button onClick={onClose} className="px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50">
                                     Hủy
                                 </button>
-                <button onClick={handleAction} className="px-6 py-2 text-sm font-medium text-white bg-gradient-to-tl from-sky-300 to-sky-500 border border-sky-300 rounded-lg shadow-sm hover:bg-sky-600" disabled={isLoading}>
+                                <button onClick={handleAction} className="px-6 py-2 text-sm font-medium text-white bg-gradient-to-tl from-sky-300 to-sky-500 border border-sky-300 rounded-lg shadow-sm hover:bg-sky-600" disabled={isLoading}>
                                     {isLoading ? 'Đang xử lý...' : title}
                                 </button>
                             </div>
@@ -361,17 +362,6 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, document }) =
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
                     <div className="flex items-center space-x-2">
-                        {mode === 'delegate' && (
-                            <button
-                                onClick={() => setIsEditMode(prev => !prev)}
-                                className={`px-3 py-1 text-xs font-medium rounded-md border ${isEditMode
-                                    ? 'bg-yellow-100 text-yellow-700 border-yellow-300'
-                                    : 'bg-gray-100 text-gray-700 border-gray-300'
-                                    }`}
-                            >
-                                {isEditMode ? 'Tắt chỉnh sửa' : 'Bật chỉnh sửa'}
-                            </button>
-                        )}
                         <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
                             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
