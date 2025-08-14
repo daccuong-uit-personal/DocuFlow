@@ -67,7 +67,7 @@ const AssignedUsersList = ({ currentAssignments }) => {
                         {visibleAssignments.map((assignment, index) => (
                             <tr key={index}>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    {assignment.userId?.name || 'N/A'}
+                                    {assignment.userId?.name || ''}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     {getTranslatedValue(assignment.role)}
@@ -76,10 +76,10 @@ const AssignedUsersList = ({ currentAssignments }) => {
                                     {getTranslatedValue(assignment.status)}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    {assignment.deadline ? formatDate(assignment.deadline) : 'N/A'}
+                                    {assignment.deadline ? formatDate(assignment.deadline) : ''}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    {assignment.note || 'Không có'}
+                                    {assignment.note || ''}
                                 </td>
                             </tr>
                         ))}

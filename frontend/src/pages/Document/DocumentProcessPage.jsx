@@ -8,6 +8,7 @@ import { useAuth } from '../../hooks/useAuth';
 import CONSTANTS from '../../utils/constants';
 import roleHierarchy from '../../utils/roleFlow';
 import { toast } from 'react-toastify';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 // Map vai trò sang tiếng Việt để hiển thị
 const roleMapping = {
@@ -25,7 +26,8 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, }) => {
         updateProcessors,
         returnDocuments,
         markAsComplete,
-        recallDocuments
+        recallDocuments,
+        fetchDocumentById,
     } = useDocuments();
 
     const [selectedUsers, setSelectedUsers] = useState([]);
@@ -133,6 +135,16 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, }) => {
             default:
                 console.error("Chế độ không hợp lệ.");
                 return;
+        }
+
+        // Sau khi thao tác thành công, refetch chi tiết để cập nhật lịch sử xử lý ngay
+        try {
+            const firstId = finalDocumentIds[0];
+            if (firstId && typeof fetchDocumentById === 'function') {
+                await fetchDocumentById(firstId);
+            }
+        } catch (e) {
+            console.error('Không thể cập nhật lại chi tiết văn bản sau khi thao tác.', e);
         }
 
         onClose();
@@ -249,7 +261,7 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, }) => {
                                 <button onClick={onClose} className="px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50">
                                     Hủy
                                 </button>
-                                <button onClick={handleAction} className="px-6 py-2 text-sm font-medium text-white bg-gradient-to-tl from-sky-300 to-sky-500 border border-sky-300 rounded-lg shadow-sm hover:bg-sky-600" disabled={isLoading}>
+                <button onClick={handleAction} className="px-6 py-2 text-sm font-medium text-white bg-gradient-to-tl from-sky-300 to-sky-500 border border-sky-300 rounded-lg shadow-sm hover:bg-sky-600" disabled={isLoading}>
                                     {isLoading ? 'Đang xử lý...' : title}
                                 </button>
                             </div>

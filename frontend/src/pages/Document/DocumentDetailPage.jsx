@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import DocumentFormPage from './DocumentFormPage';
 import DocumentProcessPage from './DocumentProcessPage';
 import { useDocuments } from '../../hooks/useDocuments';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 const DocumentDetailPage = () => {
     const { id } = useParams();
@@ -29,6 +30,10 @@ const DocumentDetailPage = () => {
         setIsProcessModalOpen(false);
         setDocumentIdForModal(null);
         setModalMode('');
+        if (id) {
+            // Refetch để đảm bảo cập nhật lịch sử xử lý ngay khi đóng modal
+            fetchDocumentById(id);
+        }
     };
 
     useEffect(() => {
@@ -38,7 +43,11 @@ const DocumentDetailPage = () => {
     }, [id, fetchDocumentById]);
 
     if (loading) {
-        return <div className="p-4 text-center text-gray-600">Đang tải chi tiết văn bản...</div>;
+        return (
+            <div className="bg-gray-100 min-h-full">
+                <LoadingSpinner size="large" message="Đang tải chi tiết văn bản..." />
+            </div>
+        );
     }
     if (error) {
         return <div className="p-4 text-center text-red-600">Lỗi: {error.message || error}</div>;
