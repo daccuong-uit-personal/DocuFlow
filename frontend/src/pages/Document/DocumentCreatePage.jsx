@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { EyeIcon } from '@heroicons/react/24/outline';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { toast } from 'react-toastify';
 import axios from 'axios';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 const DocumentCreatePage = () => {
+    const navigate = useNavigate();
+
     const [formData, setFormData] = useState({
         documentBook: '',
         documentNumber: '',
@@ -31,10 +34,13 @@ const DocumentCreatePage = () => {
     // State để theo dõi tệp nào đang được hover
     const [hoveredFile, setHoveredFile] = useState(null);
 
+    const [loading, setLoading] = useState(false);
+
     // Fetch danh sách phòng ban khi component mount
     useEffect(() => {
         const fetchDepartments = async () => {
             try {
+                setLoading(true);
                 const token = localStorage.getItem('token'); 
                 const response = await axios.get('http://localhost:8000/api/departments', {
                     headers: {
@@ -45,6 +51,8 @@ const DocumentCreatePage = () => {
             } catch (error) {
                 console.error("Lỗi khi lấy danh sách phòng ban:", error);
                 toast.error("Không thể tải danh sách phòng ban.", { position: "top-right" });
+            } finally {
+                setLoading(false);
             }
         };
         fetchDepartments();
@@ -137,6 +145,7 @@ const DocumentCreatePage = () => {
                 }
             });
             toast.success("Tạo văn bản thành công!", { position: "top-right" });
+            navigate('/documents');
             setFormData({
                 documentBook: '', documentNumber: '', sendingUnit: '', recivingUnit: '',
                 recivedDate: '', recordedDate: '', dueDate: '', receivingMethod: 'Online',
@@ -151,9 +160,16 @@ const DocumentCreatePage = () => {
         }
     };
 
+    if (loading) {
+        return (
+            <div className="bg-gray-100 min-h-full p-0">
+                <LoadingSpinner size="large" message="Đang tải dữ liệu..." />
+            </div>
+        );
+    }
+
     return (
         <div className="bg-gray-100 min-h-full p-0">
-            <ToastContainer position="top-right" /> {/* Vị trí toast container */}
             <form onSubmit={handleSubmit}>
                 {/* Header và Breadcrumb */}
                 <div className="flex justify-between items-center mb-2">
@@ -161,9 +177,9 @@ const DocumentCreatePage = () => {
                         <h1 className="text-lg font-semibold text-gray-800">Tạo văn bản đến</h1>
                     </div>
                     <div className="flex space-x-2">
-                        <button type="button" className="h-8 flex items-center px-4 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50">
+                        {/* <button type="button" className="h-8 flex items-center px-4 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50">
                             Chuyển xử lý
-                        </button>
+                        </button> */}
                         <button type="submit" className="h-8 flex items-center px-8 py-2 text-xs font-medium text-white bg-gradient-to-tl from-sky-300 from-30% to-sky-500 border border-gray-300 rounded-lg shadow-sm hover:bg-sky-600">
                             Lưu
                         </button>
@@ -318,13 +334,24 @@ const DocumentCreatePage = () => {
                         </div>
                         <div className="col-span-1">
                             <label className="block text-xs font-medium text-gray-700 mb-1">Loại VB</label>
-                            <input
-                                type="text"
+                            <select
                                 name="documentType"
                                 value={formData.documentType}
                                 onChange={handleChange}
                                 className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                            />
+                                required
+                            >
+                                <option value="">Chọn loại văn bản</option>
+                                <option value="Hiến pháp">Hiến pháp</option>
+                                <option value="Sắc lệnh - Sắc luật">Sắc lệnh - Sắc luật</option>
+                                <option value="Luật">Luật</option>
+                                <option value="Nghị định">Nghị định</option>
+                                <option value="Quyết định">Quyết định</option>
+                                <option value="Thông tư">Thông tư</option>
+                                <option value="Công văn">Công văn</option>
+                                <option value="Chỉ thị">Chỉ thị</option>
+                                <option value="Khác">Khác</option>
+                            </select>
                         </div>
                     </div>
 

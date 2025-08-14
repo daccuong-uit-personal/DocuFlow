@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Avatar from '../../components/common/Avatar';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 // Import service
 import userService from '../../services/userService';
@@ -31,7 +32,11 @@ const UserDetailPage = () => {
 
   // Hiển thị trạng thái loading
   if (loading) {
-    return <div className="text-center mt-8">Đang tải...</div>;
+    return (
+            <div className="bg-gray-100 min-h-full">
+                <LoadingSpinner size="large" message="Đang tải chi tiết người dùng..." />
+            </div>
+        );
   }
 
   // Hiển thị lỗi nếu có

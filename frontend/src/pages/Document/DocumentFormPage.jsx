@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { usePermissions } from '../../hooks/usePermissions';
 import { useNavigate } from 'react-router-dom';
+import userService from '../../services/userService';
 
 import AttachmentsList from '../../components/common/AttachmentsList'
 import TransferHistoryTable from '../../components/common/TransferHistoryTable';
@@ -16,6 +17,8 @@ const DocumentFormPage = ({ initialData, isEditMode = false, onSave, onProcessCl
             : initialData || {}
     );
 
+    const [departments, setDepartments] = useState([]);
+
     const handleEditClick = () => {
         console.log('Bấm nút "Chỉnh sửa"');
         if (initialData?.document?._id) {
@@ -30,6 +33,21 @@ const DocumentFormPage = ({ initialData, isEditMode = false, onSave, onProcessCl
             setFormData(initialData.document || initialData);
         }
     }, [initialData]);
+
+    useEffect(() => {
+        // Chỉ cần danh sách phòng ban khi ở chế độ chỉnh sửa
+        const loadDepartments = async () => {
+            try {
+                const data = await userService.getDepartments();
+                setDepartments(Array.isArray(data) ? data : []);
+            } catch (e) {
+                console.error('Không thể tải danh sách phòng ban:', e);
+            }
+        };
+        if (isEditMode) {
+            loadDepartments();
+        }
+    }, [isEditMode]);
 
 
     const handleRemoveFile = (fileUrlToRemove) => {
@@ -85,6 +103,15 @@ const DocumentFormPage = ({ initialData, isEditMode = false, onSave, onProcessCl
             displayValue = displayValue.map(user => user.name).join(', ');
         } else if (name === 'signer' && displayValue && typeof displayValue === 'object') {
             displayValue = displayValue.name;
+        } else if (name === 'status' && displayValue) {
+            // Việt hoá trạng thái hiển thị ở trang chi tiết
+            const vietnameseStatusMap = {
+                Draft: 'Khởi tạo',
+                Processing: 'Đang xử lý',
+                Completed: 'Hoàn thành',
+                returned: 'Bị trả lại',
+            };
+            displayValue = vietnameseStatusMap[displayValue] || displayValue;
         }
 
         if (['recivedDate', 'dueDate', 'recordedDate'].includes(name) && displayValue) {
@@ -158,10 +185,12 @@ const DocumentFormPage = ({ initialData, isEditMode = false, onSave, onProcessCl
                     )}
                     {!isEditMode && (
                         <>
-                            <button onClick={() => onProcessClick(initialData.document._id, 'completed')}
-                                className="h-8 flex items-center px-4 py-2 text-xs font-medium text-white bg-gradient-to-tl from-sky-300 from-30% to-sky-500 border border-gray-300 rounded-lg shadow-sm hover:bg-green-600">
-                                Hoàn thành văn bản
-                            </button>
+                            {!hasRole('van_thu') && (
+                                <button onClick={() => onProcessClick(initialData.document._id, 'completed')}
+                                    className="h-8 flex items-center px-4 py-2 text-xs font-medium text-white bg-gradient-to-tl from-sky-300 from-30% to-sky-500 border border-gray-300 rounded-lg shadow-sm hover:bg-green-600">
+                                    Hoàn thành văn bản
+                                </button>
+                            )}
                             <button onClick={() => onProcessClick(initialData.document._id, 'delegate')}
                                 className="h-8 flex items-center px-4 py-2 text-xs font-medium text-white bg-gradient-to-tl from-sky-300 from-30% to-sky-500 border border-gray-300 rounded-lg shadow-sm hover:bg-blue-600">
                                 Chuyển xử lý
@@ -197,8 +226,18 @@ const DocumentFormPage = ({ initialData, isEditMode = false, onSave, onProcessCl
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4 items-stretch">
                     {renderFormField('Số văn bản', 'documentNumber', 'text', true)}
                     {renderFormField('Sổ văn bản', 'documentBook')}
-                    {renderFormField('Đơn vị gửi', 'sendingUnit')}
-                    {renderFormField('Đơn vị nhận', 'recivingUnit')}
+                    {isEditMode
+                        ? renderSelectField('Đơn vị gửi', 'sendingUnit', (
+                            [{ label: 'Chọn đơn vị gửi', value: '' }, ...departments.map(d => ({ label: d.name, value: d.name }))]
+                        ))
+                        : renderFormField('Đơn vị gửi', 'sendingUnit', 'text', true)
+                    }
+                    {isEditMode
+                        ? renderSelectField('Đơn vị nhận', 'recivingUnit', (
+                            [{ label: 'Chọn đơn vị nhận', value: '' }, ...departments.map(d => ({ label: d.name, value: d.name }))]
+                        ))
+                        : renderFormField('Đơn vị nhận', 'recivingUnit', 'text', true)
+                    }
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4 items-stretch">
@@ -234,18 +273,17 @@ const DocumentFormPage = ({ initialData, isEditMode = false, onSave, onProcessCl
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4 items-stretch">
                     {renderSelectField('Loại VB', 'documentType', [
                         { label: 'Chọn loại văn bản', value: '' },
+                        { label: 'Hiến pháp', value: 'Hiến pháp' },
+                        { label: 'Sắc lệnh - Sắc luật', value: 'Sắc lệnh - Sắc luật' },
+                        { label: 'Luật', value: 'Luật' },
+                        { label: 'Nghị định', value: 'Nghị định' },
+                        { label: 'Quyết định', value: 'Quyết định' },
+                        { label: 'Thông tư', value: 'Thông tư' },
                         { label: 'Công văn', value: 'Công văn' },
-                        { label: 'Thông báo', value: 'Thông báo' },
-                        { label: 'Báo cáo', value: 'Báo cáo' }
+                        { label: 'Chỉ thị', value: 'Chỉ thị' },
+                        { label: 'Khác', value: 'Khác' }
                     ])}
-                    {renderSelectField('Lĩnh vực', 'category', [
-                        { label: 'Chọn lĩnh vực', value: '' },
-                        { label: 'Hành chính', value: 'Hành chính' },
-                        { label: 'Nhân sự', value: 'Nhân sự' },
-                        { label: 'Kế toán', value: 'Kế toán' },
-                        { label: 'Nội bộ', value: 'Nội bộ' },
-                        { label: 'Nông nghiệp', value: 'Nông nghiệp' }
-                    ])}
+                    {renderFormField('Lĩnh vực', 'category')}
                     {renderFormField('Người ký', 'signer')}
                     {/* {renderFormField('Người được giao', 'assignedUsers')} */}
                 </div>
