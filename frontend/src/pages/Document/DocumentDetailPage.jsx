@@ -20,6 +20,7 @@ const DocumentDetailPage = () => {
     const [modalMode, setModalMode] = useState('completed');
 
     const handleOpenProcessModal = (docId, mode) => {
+        console.log('23 DocumentDetailPage: Open process modal', docId, mode);
         setDocumentIdForModal(docId);
         setModalMode(mode);
         setIsProcessModalOpen(true);
@@ -60,6 +61,7 @@ const DocumentDetailPage = () => {
                 onClose={handleCloseProcessModal}
                 documentIds={documentIdForModal ? [documentIdForModal] : []}
                 mode={modalMode}
+                document={selectedDocument}
             />
         </div>
     );
