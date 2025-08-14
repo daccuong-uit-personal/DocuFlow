@@ -15,14 +15,14 @@ exports.getUsers = async (req, res) => {
     }
 };
 
-exports.getUserById = async (req, res) => {
+exports.getUserById = async (req, res, next) => {
     try {
         const user = await UserService.getUserById(req.params.id);
-        return res.status(200).json({ user });
+        res.status(200).json({ user });
     } catch (error) {
-        return res.status(404).json({ error: error.message });
+        next(error);
     }
-}
+};
 
 exports.updateUser = async (req, res) => {
     try {

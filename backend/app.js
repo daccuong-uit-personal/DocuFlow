@@ -8,7 +8,7 @@ const path = require('path');
 // Import các file cấu hình và tiện ích
 const connectDB = require('./config/db');
 const config = require('./config/config');
-const errorHandler = require('./middlewares/errorMiddleware');
+const errorHandler = require('./middlewares/errorHandler');
 const { swaggerUi, swaggerSpec } = require('./config/swagger');
 
 // Import các file routes
@@ -58,7 +58,7 @@ app.use('/api/documents', documentRoutes);
 app.use('/api/permissions', permissionRoutes);
 app.use('/api/roles', roleRoutes);
 
-// app.use(errorHandler);
+app.use(errorHandler);
 
 // Đường dẫn tài liệu API
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));

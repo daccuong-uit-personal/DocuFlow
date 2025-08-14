@@ -99,56 +99,45 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, }) => {
     };
 
     const handleAction = async () => {
-        setIsLoading(true);
         const finalDocumentIds = Array.isArray(documentIds) ? documentIds : [documentIds];
-        try {
-            switch (mode) {
-                case 'delegate':
-                    if (selectedUsers.length === 0) {
-                        toast.warn("Vui lòng chọn ít nhất một người để chuyển xử lý.");
-                        setIsLoading(false);
-                        return;
-                    }
-                    const delegatedProcessors = selectedUsers.map(u => ({
-                        userId: u._id,
-                        role: userRoles[u._id],
-                        status: 'pending',
-                        deadline: deadline,
-                    })).filter(p => p.role);
 
-                    if (delegatedProcessors.length === 0) {
-                        toast.warn("Vui lòng chọn ít nhất một vai trò cho người được chuyển.");
-                        setIsLoading(false);
-                        return;
-                    }
+        switch (mode) {
+            case 'delegate':
+                if (selectedUsers.length === 0) {
+                    toast.warn("Vui lòng chọn ít nhất một người để chuyển xử lý.");
+                    return;
+                }
+                const delegatedProcessors = selectedUsers.map(u => ({
+                    userId: u._id,
+                    role: userRoles[u._id],
+                    status: 'pending',
+                    deadline
+                })).filter(p => p.role);
 
-                    await processDocuments(finalDocumentIds, delegatedProcessors, note, deadline);
-                    break;
-                case 'return':
-                    // Trả lại văn bản về cho người giao trước đó, kèm lý do
-                    await returnDocuments(finalDocumentIds, note);
-                    break;
-                case 'recall':
-                    // Sửa lỗi ở đây: Sử dụng hàm recallDocuments từ context
-                    await recallDocuments(documentIds);
-                    break;
-                case 'completed':
-                    // Sửa lỗi ở đây: Sử dụng hàm markAsComplete từ context
-                    await markAsComplete(documentIds);
-                    break;
-                default:
-                    console.error("Chế độ không hợp lệ.");
-                    break;
-            }
-            toast.success(`${title} thành công!`);
-            onClose();
-        } catch (error) {
-            console.error(`Lỗi khi thực hiện ${title}:`, error);
-            toast.error(`Lỗi khi thực hiện ${title}. Vui lòng thử lại.`);
-        } finally {
-            setIsLoading(false);
+                if (delegatedProcessors.length === 0) {
+                    toast.warn("Vui lòng chọn ít nhất một vai trò cho người được chuyển.");
+                    return;
+                }
+
+                await processDocuments(finalDocumentIds, delegatedProcessors, note, deadline);
+                break;
+            case 'return':
+                await returnDocuments(finalDocumentIds, note);
+                break;
+            case 'recall':
+                await recallDocuments(finalDocumentIds);
+                break;
+            case 'completed':
+                await markAsComplete(finalDocumentIds);
+                break;
+            default:
+                console.error("Chế độ không hợp lệ.");
+                return;
         }
+
+        onClose();
     };
+
 
     const renderContent = () => {
         // ... (phần UI không thay đổi)
@@ -184,7 +173,7 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, }) => {
                                                     <div className="flex flex-col">
                                                         <span className="font-semibold text-blue-600">
                                                             {user.name}
-                                                            { (user.role?.description || user.role?.name) && (
+                                                            {(user.role?.description || user.role?.name) && (
                                                                 <span className="ml-1 text-red-500 font-normal text-[11px]">- {user.role?.description || user.role?.name}</span>
                                                             )}
                                                         </span>

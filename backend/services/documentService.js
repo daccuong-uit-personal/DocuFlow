@@ -6,6 +6,8 @@ const User = require("../models/User");
 const constants = require("../constants/constants");
 const { canDelegate, getAllLowerRoles } = require("./roleFlowService");
 
+const BusinessError = require("../utils/BusinessError");
+
 // Helper function để tạo một đối tượng lịch sử xử lý.
 const createHistoryEntry = (action, actorId, details) => {
     return {
@@ -31,6 +33,9 @@ const createProcessingAssignment = (processor, assignerId, note, deadline) => {
 };
 
 exports.getDocumentById = async (documentId) => {
+    if (!mongoose.Types.ObjectId.isValid(documentId)) {
+        throw new BusinessError("ID văn bản không hợp lệ.", 400);
+    }
     try {
         const document = await Document.findById(documentId)
             .populate({
@@ -59,44 +64,78 @@ exports.getDocumentById = async (documentId) => {
                 ]
             });
         if (!document) {
-            throw new Error('Không tìm thấy văn bản.');
+            throw new BusinessError("Không tìm thấy văn bản.", 404);
         }
         return document;
     } catch (error) {
-        throw new Error(`Lỗi khi lấy thông tin văn bản: ${error.message}`);
+        if (error instanceof BusinessError) {
+            throw error;
+        }
+        console.error("Lỗi khi lấy thông tin văn bản:", error);
+        throw new BusinessError("Đã xảy ra lỗi hệ thống khi lấy thông tin văn bản.", 500);
     }
 };
 
 exports.updateDocument = async (documentId, updatedData) => {
+    if (!mongoose.Types.ObjectId.isValid(documentId)) {
+        throw new BusinessError("ID văn bản không hợp lệ.", 400);
+    }
+
     try {
         const document = await Document.findByIdAndUpdate(documentId, updatedData, { new: true });
+
+        if (!document) {
+            throw new BusinessError("Không tìm thấy văn bản.", 404);
+        }
+
         return document;
     } catch (error) {
-        console.error("Error updating document:", error);
-        throw error;
+        if (error instanceof BusinessError) throw error;
+        console.error("Lỗi khi cập nhật văn bản:", error);
+        throw new BusinessError("Đã xảy ra lỗi hệ thống khi cập nhật văn bản.", 500);
     }
 };
 
 exports.deleteDocument = async (documentId) => {
+    if (!mongoose.Types.ObjectId.isValid(documentId)) {
+        throw new BusinessError("ID văn bản không hợp lệ.", 400);
+    }
+
     try {
         const document = await Document.findByIdAndDelete(documentId);
+
+        if (!document) {
+            throw new BusinessError("Không tìm thấy văn bản.", 404);
+        }
+
         return document;
     } catch (error) {
-        console.error("Error deleting document:", error);
-        throw error;
+        if (error instanceof BusinessError) throw error;
+        console.error("Lỗi khi xóa văn bản:", error);
+        throw new BusinessError("Đã xảy ra lỗi hệ thống khi xóa văn bản.", 500);
     }
 };
 
 exports.deleteManyDocuments = async (documentIds) => {
+    if (!Array.isArray(documentIds) || documentIds.length === 0) {
+        throw new BusinessError("Danh sách IDs không hợp lệ.", 400);
+    }
+
+    // Kiểm tra tất cả ID có hợp lệ không
+    for (const id of documentIds) {
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            throw new BusinessError(`ID không hợp lệ: ${id}`, 400);
+        }
+    }
+
     try {
         const result = await Document.deleteMany({ _id: { $in: documentIds } });
-
         console.log(`${result.deletedCount} documents deleted successfully.`);
-
         return result;
     } catch (error) {
-        console.error("Error deleting documents:", error);
-        throw error;
+        if (error instanceof BusinessError) throw error;
+        console.error("Lỗi khi xóa nhiều văn bản:", error);
+        throw new BusinessError("Đã xảy ra lỗi hệ thống khi xóa nhiều văn bản.", 500);
     }
 };
 
@@ -144,385 +183,375 @@ exports.searchAndFilterDocuments = async (queryOptions, user) => {
             ];
         }
 
-        if (documentBook) {
-            query.documentBook = documentBook;
-        }
-        if (documentNumber) {
-            query.documentNumber = documentNumber;
-        }
-        if (sendingUnit) {
-            query.sendingUnit = sendingUnit;
-        }
-        if (recivingUnit) {
-            query.recivingUnit = recivingUnit;
-        }
-        if (receivingMethod) {
-            query.receivingMethod = receivingMethod;
-        }
-        if (urgencyLevel) {
-            query.urgencyLevel = urgencyLevel;
-        }
-        if (confidentialityLevel) {
-            query.confidentialityLevel = confidentialityLevel;
-        }
-        if (documentType) {
-            query.documentType = documentType;
-        }
-        if (category) {
-            query.category = category;
-        }
-        if (signer) {
-            query.signer = signer;
-        }
+        if (documentBook) query.documentBook = documentBook;
+        if (documentNumber) query.documentNumber = documentNumber;
+        if (sendingUnit) query.sendingUnit = sendingUnit;
+        if (recivingUnit) query.recivingUnit = recivingUnit;
+        if (receivingMethod) query.receivingMethod = receivingMethod;
+        if (urgencyLevel) query.urgencyLevel = urgencyLevel;
+        if (confidentialityLevel) query.confidentialityLevel = confidentialityLevel;
+        if (documentType) query.documentType = documentType;
+        if (category) query.category = category;
+        if (signer) query.signer = signer;
+
         if (status) {
-            query.status = status;
+            if (status === 'returned') {
+                query['currentAssignments.status'] = 'returned';
+                query['currentAssignments.userId'] = user.id;
+            } else {
+                query.status = status;
+            }
         }
 
-        // Lọc theo khoảng ngày nhận (recivedDate)
         if (recivedDateFrom || recivedDateTo) {
             query.recivedDate = {};
-            if (recivedDateFrom) {
-                query.recivedDate.$gte = recivedDateFrom;
-            }
-            if (recivedDateTo) {
-                query.recivedDate.$lte = recivedDateTo;
-            }
+            if (recivedDateFrom) query.recivedDate.$gte = recivedDateFrom;
+            if (recivedDateTo) query.recivedDate.$lte = recivedDateTo;
         }
 
-        // Lọc theo khoảng ngày đến hạn (dueDate)
         if (dueDateFrom || dueDateTo) {
             query.dueDate = {};
-            if (dueDateFrom) {
-                query.dueDate.$gte = dueDateFrom;
-            }
-            if (dueDateTo) {
-                query.dueDate.$lte = dueDateTo;
-            }
+            if (dueDateFrom) query.dueDate.$gte = dueDateFrom;
+            if (dueDateTo) query.dueDate.$lte = dueDateTo;
         }
+
         const documents = await Document.find(query).sort({ recivedDate: -1 });
         return documents;
     } catch (error) {
-        console.error("Error searching and filtering documents:", error);
-        throw error;
+        if (error instanceof BusinessError) throw error;
+        console.error("Lỗi khi tìm kiếm và lọc văn bản:", error);
+        throw new BusinessError("Đã xảy ra lỗi hệ thống khi tìm kiếm văn bản.", 500);
     }
 };
 
 // Tạo một văn bản mới với trạng thái DRAFT.
 exports.createDocument = async (documentData, creatorId) => {
-    const newDocument = new Document({
-        ...documentData,
-        createdBy: creatorId,
-    });
+    if (!documentData.documentBook || !documentData.summary) {
+        throw new BusinessError("Cần cung cấp đầy đủ thông tin cơ bản của văn bản.", 400);
+    }
 
-    // Thêm bản ghi lịch sử tạo văn bản
-    const historyEntry = createHistoryEntry('createDocument', creatorId, { note: 'Văn bản được khởi tạo.' });
-    newDocument.processingHistory.push(historyEntry);
+    try {
+        const newDocument = new Document({
+            ...documentData,
+            createdBy: creatorId,
+        });
 
-    await newDocument.save();
-    return newDocument;
+        const historyEntry = createHistoryEntry('createDocument', creatorId, {
+            note: 'Văn bản được khởi tạo.'
+        });
+        newDocument.processingHistory.push(historyEntry);
+
+        await newDocument.save();
+        return newDocument;
+    } catch (error) {
+        if (error instanceof BusinessError) throw error;
+        console.error("Lỗi khi tạo văn bản:", error);
+        throw new BusinessError("Đã xảy ra lỗi hệ thống khi tạo văn bản.", 500);
+    }
 };
 
 // Chuyển xử lý văn bản cho người khác.
 exports.forwardProcessDocuments = async (documentIds, assignerId, processors, note, deadline) => {
-    // 1. Tìm và kiểm tra các văn bản
-    const documents = await Document.find({ _id: { $in: documentIds } });
-    if (!documents || documents.length === 0) {
-        throw new Error('Không tìm thấy văn bản nào.');
+    if (!Array.isArray(documentIds) || documentIds.length === 0) {
+        throw new BusinessError("Cần cung cấp ít nhất một ID văn bản.", 400);
+    }
+    if (!Array.isArray(processors) || processors.length === 0) {
+        throw new BusinessError("Cần cung cấp ít nhất một người xử lý.", 400);
     }
 
-    const updatedDocuments = [];
-
-    // Tìm thông tin người giao việc một lần duy nhất
-    const assignerUser = await User.findById(assignerId)
-        .populate('role', 'name');
-    if (!assignerUser) {
-        throw new Error('Không tìm thấy người giao việc.');
-    }
-
-    // Tìm thông tin của tất cả người nhận việc một lần duy nhất
-    const processorUserIds = processors.map(p => p.userId);
-    const processorUsers = await User.find({ _id: { $in: processorUserIds } }).populate('role', 'name');
-    if (processorUsers.length !== processors.length) {
-        throw new Error('Một hoặc nhiều người nhận việc không tồn tại.');
-    }
-
-    for (const doc of documents) {
-        // 2. Kiểm tra quyền chuyển tiếp của người giao việc
-        const isAssignerCreator = doc.createdBy.equals(assignerId);
-        const assignerAssignment = doc.currentAssignments.find(assignment =>
-            assignment.userId.equals(assignerId) &&
-            assignment.status === 'processing' &&
-            ['mainProcessor', 'collaborator'].includes(assignment.role)
-        );
-
-        if (!isAssignerCreator && !assignerAssignment) {
-            throw new Error(`Người dùng ${assignerId} không có quyền chuyển tiếp văn bản ${doc._id}. Chỉ người tạo, người xử lý chính hoặc người phối hợp mới có quyền này.`);
+    try {
+        const documents = await Document.find({ _id: { $in: documentIds } });
+        if (!documents || documents.length === 0) {
+            throw new BusinessError("Không tìm thấy văn bản nào.", 404);
         }
 
-        // 3. Kiểm tra vai trò của người nhận việc
-        for (const p of processors) {
-            const processorUser = processorUsers.find(u => u._id.equals(p.userId));
-            if (!canDelegate(assignerUser.role.name, processorUser.role.name)) {
-                throw new Error(`Vai trò của người giao việc (${assignerUser.role.name}) không thể chuyển tiếp cho vai trò của người nhận việc (${processorUser.role.name}).`);
-            }
+        const updatedDocuments = [];
+
+        const assignerUser = await User.findById(assignerId).populate('role', 'name');
+        if (!assignerUser) {
+            throw new BusinessError("Không tìm thấy người giao việc.", 404);
         }
 
-        // 4. Kiểm tra điều kiện trùng lặp
-        const existingMainProcessor = doc.currentAssignments.some(assignment => assignment.role === 'mainProcessor' && assignment.status === 'processing');
-        const newMainProcessorCount = processors.filter(p => p.role === 'mainProcessor').length;
-
-        if (newMainProcessorCount > 1) {
-            throw new Error('Không thể chỉ định nhiều hơn một người xử lý chính trong một lần chuyển.');
+        const processorUserIds = processors.map(p => p.userId);
+        const processorUsers = await User.find({ _id: { $in: processorUserIds } }).populate('role', 'name');
+        if (processorUsers.length !== processors.length) {
+            throw new BusinessError("Một hoặc nhiều người nhận việc không tồn tại.", 404);
         }
 
-        if (existingMainProcessor && newMainProcessorCount === 1) {
-            throw new Error('Không thể chỉ định người xử lý chính mới khi đã có người xử lý chính đang hoạt động.');
-        }
-
-        const newAssignments = [];
-
-        for (const p of processors) {
-            const existingAssignment = doc.currentAssignments.find(a =>
-                a.userId.equals(p.userId)
+        for (const doc of documents) {
+            const isAssignerCreator = doc.createdBy.equals(assignerId);
+            const assignerAssignment = doc.currentAssignments.find(a =>
+                a.userId.equals(assignerId) &&
+                a.status === 'processing' &&
+                ['mainProcessor', 'collaborator'].includes(a.role)
             );
 
-            if (!existingAssignment) {
-                newAssignments.push(createProcessingAssignment(p, assignerId, note, deadline));
-            } else if (existingAssignment.status === 'processing') {
-                continue;
-            } else if (['completed', 'returned'].includes(existingAssignment.status)) {
-                existingAssignment.status = 'processing';
-                existingAssignment.note = note;
-                existingAssignment.deadline = deadline;
-                existingAssignment.assignedBy = assignerId;
-                existingAssignment.assignedAt = new Date();
+            if (!isAssignerCreator && !assignerAssignment) {
+                throw new BusinessError(
+                    `Người dùng ${assignerId} không có quyền chuyển tiếp văn bản ${doc._id}.`,
+                    403
+                );
             }
+
+            for (const p of processors) {
+                const processorUser = processorUsers.find(u => u._id.equals(p.userId));
+                if (!canDelegate(assignerUser.role.name, processorUser.role.name)) {
+                    throw new BusinessError(
+                        `Vai trò của người giao việc (${assignerUser.role.name}) không thể chuyển tiếp cho vai trò của người nhận việc (${processorUser.role.name}).`,
+                        403
+                    );
+                }
+            }
+
+            const existingMainProcessor = doc.currentAssignments.some(a => a.role === 'mainProcessor' && a.status === 'processing');
+            const newMainProcessorCount = processors.filter(p => p.role === 'mainProcessor').length;
+
+            if (newMainProcessorCount > 1) {
+                throw new BusinessError("Không thể chỉ định nhiều hơn một người xử lý chính.", 400);
+            }
+
+            if (existingMainProcessor && newMainProcessorCount === 1) {
+                throw new BusinessError("Đã có người xử lý chính đang hoạt động.", 400);
+            }
+
+            const newAssignments = [];
+
+            for (const p of processors) {
+                const existingAssignment = doc.currentAssignments.find(a => a.userId.equals(p.userId));
+
+                if (!existingAssignment) {
+                    newAssignments.push(createProcessingAssignment(p, assignerId, note, deadline));
+                } else if (existingAssignment.status === 'processing') {
+                    continue;
+                } else if (['completed', 'returned'].includes(existingAssignment.status)) {
+                    existingAssignment.status = 'processing';
+                    existingAssignment.note = note;
+                    existingAssignment.deadline = deadline;
+                    existingAssignment.assignedBy = assignerId;
+                    existingAssignment.assignedAt = new Date();
+                }
+            }
+
+            doc.currentAssignments.push(...newAssignments);
+            doc.status = constants.DOCUMENT_STATUS.PROCESSING;
+
+            const historyEntry = createHistoryEntry('forwardProcessing', assignerId, {
+                processors: processors.map(p => ({ userId: p.userId, role: p.role })),
+                note
+            });
+            doc.processingHistory.push(historyEntry);
+
+            await doc.save();
+            updatedDocuments.push(doc);
         }
 
-        // 5. Thêm các nhiệm vụ mới vào danh sách
-        doc.currentAssignments.push(...newAssignments);
-
-        // 6. Cập nhật trạng thái tổng thể của văn bản
-        doc.status = constants.DOCUMENT_STATUS.PROCESSING;
-
-        // 7. Ghi lại lịch sử
-        const historyEntry = createHistoryEntry('forwardProcessing', assignerId, {
-            processors: processors.map(p => ({
-                userId: p.userId,
-                role: p.role
-            })),
-            note
-        });
-        doc.processingHistory.push(historyEntry);
-
-        // 8. Lưu lại thay đổi
-        await doc.save();
-        updatedDocuments.push(doc);
+        return updatedDocuments;
+    } catch (error) {
+        if (error instanceof BusinessError) throw error;
+        console.error("Lỗi khi chuyển xử lý văn bản:", error);
+        throw new BusinessError("Đã xảy ra lỗi hệ thống khi chuyển xử lý văn bản.", 500);
     }
-
-    return updatedDocuments;
 };
 
 // Trả lại văn bản cho người đã giao trước đó
 exports.returnDocuments = async (documentIds, assigneeId, note) => {
-    const processorUser = await User.findById(assigneeId).populate('role', 'name');
-    if (!processorUser) {
-        throw new Error('Không tìm thấy người dùng.');
+    if (!Array.isArray(documentIds) || documentIds.length === 0) {
+        throw new BusinessError("Cần cung cấp ít nhất một ID văn bản.", 400);
     }
 
-    const documents = await Document.find({ _id: { $in: documentIds } })
-    .populate({
-        path: 'currentAssignments.userId',
-        select: 'role',
-        populate: {
-            path: 'role',
-            select: 'name'
-        }
-    });
-    if (!documents || documents.length === 0) {
-        throw new Error('Không tìm thấy văn bản nào.');
-    }
-
-    const updatedDocuments = [];
-
-    for (const doc of documents) {
-        const assignmentToReturn = doc.currentAssignments.find(
-            a => a.userId.equals(assigneeId) && a.status === 'processing'
-        );
-
-        if (!assignmentToReturn) {
-            throw new Error(`Bạn không có nhiệm vụ đang chờ xử lý với văn bản ${doc._id}.`);
+    try {
+        const processorUser = await User.findById(assigneeId).populate('role', 'name');
+        if (!processorUser) {
+            throw new BusinessError("Không tìm thấy người dùng.", 404);
         }
 
-        const assignerId = assignmentToReturn.assignedBy;
-        if (!assignerId) {
-            throw new Error(`Không tìm thấy người đã giao nhiệm vụ cho bạn trong văn bản ${doc._id}.`);
-        }
-
-        // Case đặc biệt: xử lý chính trả lại cho người tạo
-        if (doc.createdBy.equals(assignerId) && assignmentToReturn.role === 'mainProcessor') {
-            doc.currentAssignments.forEach(a => {
-                if (a.status !== 'returned') {
-                    a.status = 'returned';
+        const documents = await Document.find({ _id: { $in: documentIds } })
+            .populate({
+                path: 'currentAssignments.userId',
+                select: 'role',
+                populate: {
+                    path: 'role',
+                    select: 'name'
                 }
             });
 
-            doc.status = constants.DOCUMENT_STATUS.DRAFT;
+        if (!documents || documents.length === 0) {
+            throw new BusinessError("Không tìm thấy văn bản nào.", 404);
+        }
 
+        const updatedDocuments = [];
+
+        for (const doc of documents) {
+            const assignmentToReturn = doc.currentAssignments.find(
+                a => a.userId.equals(assigneeId) && a.status === 'processing'
+            );
+
+            if (!assignmentToReturn) {
+                throw new BusinessError(`Bạn không có nhiệm vụ đang chờ xử lý với văn bản ${doc._id}.`, 403);
+            }
+
+            const assignerId = assignmentToReturn.assignedBy;
+            if (!assignerId) {
+                throw new BusinessError(`Không tìm thấy người đã giao nhiệm vụ cho bạn trong văn bản ${doc._id}.`, 404);
+            }
+
+            // Case đặc biệt: xử lý chính trả lại cho người tạo
+            if (doc.createdBy.equals(assignerId) && assignmentToReturn.role === 'mainProcessor') {
+                doc.currentAssignments.forEach(a => {
+                    if (a.status !== 'returned') {
+                        a.status = 'returned';
+                    }
+                });
+
+                doc.status = constants.DOCUMENT_STATUS.DRAFT;
+
+                doc.processingHistory.push(createHistoryEntry(
+                    'returnDocument',
+                    assigneeId,
+                    {
+                        note: note || 'Người xử lý chính trả lại cho người tạo, văn bản trở về trạng thái khởi tạo.'
+                    }
+                ));
+
+                doc.lastReturnReason = note || '';
+                doc.lastReturnedBy = assigneeId;
+                doc.lastReturnedAt = new Date();
+
+                await doc.save();
+                updatedDocuments.push(doc);
+                continue;
+            }
+
+            // Auto return tất cả cấp dưới
+            const lowerRoles = getAllLowerRoles(processorUser.role.name);
+            const subAssignments = doc.currentAssignments.filter(a =>
+                a.userId?.role?.name &&
+                lowerRoles.includes(a.userId.role.name) && 
+                a.status !== 'returned'
+            );
+
+            for (const sub of subAssignments) {
+                sub.status = 'returned';
+            }
+
+            if (subAssignments.length > 0) {
+                doc.processingHistory.push(createHistoryEntry(
+                    'returnDocument',
+                    assigneeId,
+                    {
+                        processors: subAssignments.map(sa => ({ userId: sa.userId })),
+                        note: 'Tự động trả lại các nhiệm vụ cấp dưới khi trả văn bản.'
+                    }
+                ));
+            }
+
+            assignmentToReturn.status = 'returned';
             doc.processingHistory.push(createHistoryEntry(
-                'mainProcessorReturnToCreator',
+                'returnDocument',
                 assigneeId,
-                {
-                    note: note || 'Người xử lý chính trả lại cho người tạo, văn bản trở về trạng thái khởi tạo.'
+                { 
+                    processors: [{ userId: assignerId }],
+                    note: note || ''
                 }
             ));
 
             doc.lastReturnReason = note || '';
             doc.lastReturnedBy = assigneeId;
             doc.lastReturnedAt = new Date();
+            doc.status = constants.DOCUMENT_STATUS.PROCESSING;
 
             await doc.save();
             updatedDocuments.push(doc);
-            continue;
         }
 
-        // Auto return tất cả cấp dưới theo cây role
-        const lowerRoles = getAllLowerRoles(processorUser.role.name);
-        console.log('Document Service 383: lowerRoles', lowerRoles);
-
-        const subAssignments = doc.currentAssignments.filter(a =>
-            a.userId?.role?.name &&
-            lowerRoles.includes(a.userId.role.name) && 
-            a.status !== 'returned'
-        );
-        console.log('Document Service 388: subAssignments', subAssignments);
-
-        for (const sub of subAssignments) {
-            sub.status = 'returned';
-        }
-
-        if (subAssignments.length > 0) {
-            doc.processingHistory.push(createHistoryEntry(
-                'returnDocument',
-                assigneeId,
-                {
-                    processors: subAssignments.map(sa => ({ userId: sa.userId })),
-                    note: 'Tự động trả lại các nhiệm vụ cấp dưới khi trả văn bản.'
-                }
-            ));
-        }
-
-        // Trả lại nhiệm vụ của mình cho người giao trực tiếp
-        assignmentToReturn.status = 'returned';
-
-        doc.processingHistory.push(createHistoryEntry(
-            'returnDocument',
-            assigneeId,
-            { 
-                processors: [{ userId: assignerId }],
-                note: note || ''
-            }
-        ));
-
-        doc.lastReturnReason = note || '';
-        doc.lastReturnedBy = assigneeId;
-        doc.lastReturnedAt = new Date();
-
-        doc.status = constants.DOCUMENT_STATUS.PROCESSING;
-
-        await doc.save();
-        updatedDocuments.push(doc);
+        return updatedDocuments;
+    } catch (error) {
+        if (error instanceof BusinessError) throw error;
+        console.error("Lỗi khi trả văn bản:", error);
+        throw new BusinessError("Đã xảy ra lỗi hệ thống khi trả văn bản.", 500);
     }
-
-    return updatedDocuments;
 };
 
 // Đánh dấu hoàn thành văn bản
 exports.markAsComplete = async (documentIds, processorId, note) => {
-    const processorUser = await User.findById(processorId).populate('role', 'name');
-    if (!processorUser) {
-        throw new Error('Không tìm thấy người dùng.');
+    if (!Array.isArray(documentIds) || documentIds.length === 0) {
+        throw new BusinessError("Cần cung cấp ít nhất một ID văn bản.", 400);
     }
 
-    const documents = await Document.find({ _id: { $in: documentIds } });
-    if (!documents || documents.length === 0) {
-        throw new Error('Không tìm thấy văn bản nào.');
-    }
-
-    const updatedDocuments = [];
-
-    for (const doc of documents) {
-        const isCreator = doc.createdBy.equals(processorId);
-        // Kiểm tra đã hoàn thành chưa, nếu rồi sẽ log ra thông báo
-        const alreadyCompletedAssignment = doc.currentAssignments.find(a =>
-            a.userId.equals(processorId) &&
-            a.status === 'completed'
-        );
-
-        if (alreadyCompletedAssignment) {
-            throw new Error(`Bạn đã hoàn thành nhiệm vụ này trước đó.`);
+    try {
+        const processorUser = await User.findById(processorId).populate('role', 'name');
+        if (!processorUser) {
+            throw new BusinessError("Không tìm thấy người dùng.", 404);
         }
 
-        // Kiểm tra xem có đang xử lý không, nếu đang xử lý thì mới được hoàn thành
-        const currentAssignment = doc.currentAssignments.find(a =>
-            a.userId.equals(processorId) &&
-            a.status === 'processing'
-        );
-        if (!isCreator && !currentAssignment) {
-            throw new Error(`Người dùng ${processorId} không có quyền hoàn thành văn bản ${doc._id}.`);
+        const documents = await Document.find({ _id: { $in: documentIds } });
+        if (!documents || documents.length === 0) {
+            throw new BusinessError("Không tìm thấy văn bản nào.", 404);
         }
 
-        if (currentAssignment?.role === 'inform') {
-            throw new Error(`Người dùng ${processorId} chỉ nhận để biết và không thể đánh dấu hoàn thành văn bản ${doc._id}.`);
-        }
+        const updatedDocuments = [];
 
-        // Lấy tất cả cấp dưới của user đang xử lý
-        const lowerRoles = getAllLowerRoles(processorUser.role.name);
+        for (const doc of documents) {
+            const isCreator = doc.createdBy.equals(processorId);
 
-        // Lọc assignments do mình giao mà user đó có role hệ thống thuộc lowerRoles
-        const myAssignedLower = [];
+            const alreadyCompletedAssignment = doc.currentAssignments.find(a =>
+                a.userId.equals(processorId) && a.status === 'completed'
+            );
+            if (alreadyCompletedAssignment) {
+                throw new BusinessError("Bạn đã hoàn thành nhiệm vụ này trước đó.", 400);
+            }
 
-        for (const assignment of doc.currentAssignments) {
-            if (assignment.assignedBy.equals(processorId)) {
-                const assigneeUser = await User.findById(assignment.userId).populate('role', 'name');
-                if (lowerRoles.includes(assigneeUser.role.name)) {
-                    myAssignedLower.push(assignment);
+            const currentAssignment = doc.currentAssignments.find(a =>
+                a.userId.equals(processorId) && a.status === 'processing'
+            );
+            if (!isCreator && !currentAssignment) {
+                throw new BusinessError(`Người dùng ${processorId} không có quyền hoàn thành văn bản ${doc._id}.`, 403);
+            }
+
+            if (currentAssignment?.role === 'inform') {
+                throw new BusinessError(`Người dùng ${processorId} chỉ nhận để biết và không thể đánh dấu hoàn thành văn bản ${doc._id}.`, 403);
+            }
+
+            const lowerRoles = getAllLowerRoles(processorUser.role.name);
+
+            const myAssignedLower = [];
+            for (const assignment of doc.currentAssignments) {
+                if (assignment.assignedBy.equals(processorId)) {
+                    const assigneeUser = await User.findById(assignment.userId).populate('role', 'name');
+                    if (lowerRoles.includes(assigneeUser.role.name)) {
+                        myAssignedLower.push(assignment);
+                    }
                 }
             }
+
+            const unfinishedLower = myAssignedLower.some(a => a.status !== 'completed');
+            if (unfinishedLower) {
+                throw new BusinessError(`Không thể hoàn thành vì vẫn còn người ở cấp dưới do bạn giao chưa xử lý xong trong văn bản ${doc._id}.`, 400);
+            }
+
+            if (currentAssignment?.role === 'mainProcessor') {
+                doc.currentAssignments.forEach(a => a.status = 'completed');
+                doc.status = constants.DOCUMENT_STATUS.COMPLETED;
+            } else {
+                currentAssignment.status = 'completed';
+                const allCompleted = doc.currentAssignments.every(a => a.status === 'completed');
+                doc.status = allCompleted ? constants.DOCUMENT_STATUS.COMPLETED : constants.DOCUMENT_STATUS.PROCESSING;
+            }
+
+            doc.processingHistory.push(createHistoryEntry(
+                'completeProcessing',
+                processorId,
+                { note: note || 'Nhiệm vụ đã được hoàn thành.' }
+            ));
+
+            await doc.save();
+            updatedDocuments.push(doc);
         }
 
-        console.log('Document Service 411: myAssignedLower', myAssignedLower);
-
-        // Nếu còn bất kỳ người cấp dưới mình giao chưa xong → chặn
-        const unfinishedLower = myAssignedLower.some(a => a.status !== 'completed');
-
-        if (unfinishedLower) {
-            throw new Error(`Không thể hoàn thành vì vẫn còn người ở cấp dưới do bạn giao chưa xử lý xong trong văn bản ${doc._id}.`);
-        }
-
-        // Nếu là mainProcessor → hoàn thành tất cả assignments
-        if (currentAssignment?.role === 'mainProcessor') {
-            doc.currentAssignments.forEach(a => a.status = 'completed');
-            doc.status = constants.DOCUMENT_STATUS.COMPLETED;
-        } else {
-            // Hoàn thành assignment của người hiện tại
-            currentAssignment.status = 'completed';
-
-            // Nếu tất cả đều hoàn thành → COMPLETED
-            const allCompleted = doc.currentAssignments.every(a => a.status === 'completed');
-            doc.status = allCompleted ? constants.DOCUMENT_STATUS.COMPLETED : constants.DOCUMENT_STATUS.PROCESSING;
-        }
-
-        // Lịch sử
-        doc.processingHistory.push(createHistoryEntry(
-            'completeProcessing',
-            processorId,
-            { note: note || 'Nhiệm vụ đã được hoàn thành.' }
-        ));
-
-        await doc.save();
-        updatedDocuments.push(doc);
+        return updatedDocuments;
+    } catch (error) {
+        if (error instanceof BusinessError) throw error;
+        console.error("Lỗi khi đánh dấu hoàn thành văn bản:", error);
+        throw new BusinessError("Đã xảy ra lỗi hệ thống khi đánh dấu hoàn thành văn bản.", 500);
     }
-
-    return updatedDocuments;
 };
