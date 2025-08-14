@@ -322,7 +322,10 @@ exports.forwardProcessDocuments = async (documentIds, assignerId, processors, no
                 if (!existingAssignment) {
                     newAssignments.push(createProcessingAssignment(p, assignerId, note, deadline));
                 } else if (existingAssignment.status === 'processing') {
-                    continue;
+                    throw new BusinessError(
+                        `Người dùng đã được phân công xử lý văn bản này, không thể chuyển tiếp. Vui lòng dùng chức năng chỉnh sửa phân công.`,
+                        400
+                    );
                 } else if (['completed', 'returned'].includes(existingAssignment.status)) {
                     existingAssignment.status = 'processing';
                     existingAssignment.note = note;
@@ -396,15 +399,50 @@ exports.returnDocuments = async (documentIds, assigneeId, note) => {
             }
 
             // Case đặc biệt: xử lý chính trả lại cho người tạo
-            if (doc.createdBy.equals(assignerId) && assignmentToReturn.role === 'mainProcessor') {
-                doc.currentAssignments.forEach(a => {
-                    if (a.status !== 'returned') {
-                        a.status = 'returned';
-                    }
-                });
+            // if (doc.createdBy.equals(assignerId) && assignmentToReturn.role === 'mainProcessor') {
+            //     doc.currentAssignments.forEach(a => {
+            //         if (a.status !== 'returned') {
+            //             a.status = 'returned';
+            //         }
+            //     });
 
+            //     doc.status = constants.DOCUMENT_STATUS.DRAFT;
+
+            //     doc.processingHistory.push(createHistoryEntry(
+            //         'returnDocument',
+            //         assigneeId,
+            //         {
+            //             note: note || 'Người xử lý chính trả lại cho người tạo, văn bản trở về trạng thái khởi tạo.'
+            //         }
+            //     ));
+
+            //     doc.lastReturnReason = note || '';
+            //     doc.lastReturnedBy = assigneeId;
+            //     doc.lastReturnedAt = new Date();
+
+            //     await doc.save();
+            //     updatedDocuments.push(doc);
+            //     continue;
+            // }
+
+            // Case đặc biệt: xử lý chính trả lại cho người tạo
+            if (doc.createdBy.equals(assignerId) && assignmentToReturn.role === 'mainProcessor') {
+                // Chỉ giữ lại người trả lại
+                doc.currentAssignments = doc.currentAssignments.filter(a =>
+                    a.userId.equals(assigneeId)
+                );
+                // Đổi trạng thái & vai trò của người trả lại
+                if (doc.currentAssignments.length > 0) {
+                    doc.currentAssignments[0].status = 'returned';
+                    if (doc.currentAssignments[0].role === 'mainProcessor') {
+                        doc.currentAssignments[0].role = 'inform';
+                    }
+                }
+
+                // Đổi trạng thái văn bản thành DRAFT
                 doc.status = constants.DOCUMENT_STATUS.DRAFT;
 
+                // Ghi lịch sử 
                 doc.processingHistory.push(createHistoryEntry(
                     'returnDocument',
                     assigneeId,
@@ -422,34 +460,59 @@ exports.returnDocuments = async (documentIds, assigneeId, note) => {
                 continue;
             }
 
-            // Auto return tất cả cấp dưới
+            // // Auto return tất cả cấp dưới
+            // const lowerRoles = getAllLowerRoles(processorUser.role.name);
+            // const subAssignments = doc.currentAssignments.filter(a =>
+            //     a.userId?.role?.name &&
+            //     lowerRoles.includes(a.userId.role.name) && 
+            //     a.status !== 'returned'
+            // );
+
+            // for (const sub of subAssignments) {
+            //     sub.status = 'returned';
+            // }
+
+            // if (subAssignments.length > 0) {
+            //     doc.processingHistory.push(createHistoryEntry(
+            //         'returnDocument',
+            //         assigneeId,
+            //         {
+            //             processors: subAssignments.map(sa => ({ userId: sa.userId })),
+            //             note: 'Tự động trả lại các nhiệm vụ cấp dưới khi trả văn bản.'
+            //         }
+            //     ));
+            // }
+
+            // Auto remove tất cả cấp dưới, chỉ giữ lại người trả lại
             const lowerRoles = getAllLowerRoles(processorUser.role.name);
-            const subAssignments = doc.currentAssignments.filter(a =>
+            const removedAssignments = doc.currentAssignments.filter(a =>
                 a.userId?.role?.name &&
-                lowerRoles.includes(a.userId.role.name) && 
-                a.status !== 'returned'
+                lowerRoles.includes(a.userId.role.name)
             );
 
-            for (const sub of subAssignments) {
-                sub.status = 'returned';
-            }
+            // Lọc bỏ cấp dưới khỏi currentAssignments
+            doc.currentAssignments = doc.currentAssignments.filter(a =>
+                !removedAssignments.includes(a)
+            );
 
-            if (subAssignments.length > 0) {
+            // Ghi lại lịch sử việc xóa
+            if (removedAssignments.length > 0) {
                 doc.processingHistory.push(createHistoryEntry(
-                    'returnDocument',
+                    'removeSubAssignments',
                     assigneeId,
                     {
-                        processors: subAssignments.map(sa => ({ userId: sa.userId })),
-                        note: 'Tự động trả lại các nhiệm vụ cấp dưới khi trả văn bản.'
+                        processors: removedAssignments.map(ra => ({ userId: ra.userId })),
+                        note: 'Đã xóa tất cả cấp dưới khi trả văn bản.'
                     }
                 ));
             }
 
+            // Đánh dấu người trả lại
             assignmentToReturn.status = 'returned';
             doc.processingHistory.push(createHistoryEntry(
                 'returnDocument',
                 assigneeId,
-                { 
+                {
                     processors: [{ userId: assignerId }],
                     note: note || ''
                 }
