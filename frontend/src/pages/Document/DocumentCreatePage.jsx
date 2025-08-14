@@ -194,8 +194,8 @@ const DocumentCreatePage = () => {
                             <label className="block text-xs font-medium text-gray-700 mb-1">Số văn bản</label>
                             <input
                                 type="text"
-                                name="documentBook"
-                                value={formData.documentBook}
+                                name="documentNumber"
+                                value={formData.documentNumber}
                                 onChange={handleChange}
                                 className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                                 required
@@ -205,8 +205,8 @@ const DocumentCreatePage = () => {
                             <label className="block text-xs font-medium text-gray-700 mb-1">Sổ văn bản</label>
                             <input
                                 type="text"
-                                name="documentNumber"
-                                value={formData.documentNumber}
+                                name="documentBook"
+                                value={formData.documentBook}
                                 onChange={handleChange}
                                 className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                             />

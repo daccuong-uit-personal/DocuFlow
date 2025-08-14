@@ -24,7 +24,7 @@ import constants from '../../utils/constants';
 
 // Mock data for filter options
 const mockDocumentTypes = [
-  { value: '', label: 'Tất cả loại VB' }, 
+  { value: '', label: 'Tất cả loại VB' },
   { value: 'Báo cáo', label: 'Báo cáo' },
   { value: 'Công văn', label: 'Công văn' },
   { value: 'Quyết định', label: 'Quyết định' },
@@ -75,7 +75,7 @@ const ordersColumns = [
   { key: 'action', header: 'Thao tác', sortable: false, widthClass: 'min-w-[120px] text-center', sticky: true },
 ];
 
-  
+
 const DocumentListPage = () => {
   const { documents, loading, error, fetchDocuments, deleteDocuments } = useDocuments();
   const { hasAnyRole, hasRole } = usePermissions();
@@ -174,15 +174,19 @@ const DocumentListPage = () => {
     setFilterRecivedDateTo('');
   };
 
-  
+  // Sắp xếp theo ngày tạo mới nhất
+  const sortedDocuments = [...documents].sort((a, b) => {
+    const dateA = new Date(a.createdAt || a.createdAt);
+    const dateB = new Date(b.createdAt || b.createdAt);
+    return dateB - dateA;
+  });
 
-  // Calculate total pages and data for the current page
-  const totalPages = Math.ceil(documents.length / itemsPerPage);
+  const totalPages = Math.ceil(sortedDocuments.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentData = documents.slice(startIndex, endIndex);
+  const currentData = sortedDocuments.slice(startIndex, endIndex);
 
-  const returnedCount = documents.filter(d => d.status === constants.DOCUMENT_STATUS.RETURNED).length;
+  const returnedCount = sortedDocuments.filter(d => d.status === constants.DOCUMENT_STATUS.RETURNED).length;
 
   // Event handlers for pagination
   const handleNextPage = () => {

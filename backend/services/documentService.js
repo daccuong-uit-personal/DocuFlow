@@ -55,7 +55,7 @@ exports.getDocumentById = async (documentId) => {
                 populate: [
                     {
                         path: 'actorId',
-                        select: 'name'
+                        select: '_id name'
                     },
                     {
                         path: 'details.processors.userId',

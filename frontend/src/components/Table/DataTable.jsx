@@ -11,7 +11,7 @@ import { LockClosedIcon, LockOpenIcon } from '@heroicons/react/24/solid';
 import { formatDate } from '../../utils/helper';
 
 // Reusable DataTable component
-const DataTable = ({ data, columns, onRowView, onRowEdit, onRowDelete, onRowClick, selectedItems, onSelectOne, onSelectAll, onRowToggleLock, lockingUserId 
+const DataTable = ({ data, columns, onRowView, onRowEdit, onRowDelete, onRowClick, selectedItems, onSelectOne, onSelectAll, onRowToggleLock, lockingUserId
 }) => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
 
@@ -67,18 +67,26 @@ const DataTable = ({ data, columns, onRowView, onRowEdit, onRowDelete, onRowClic
 
   // Helper function to get status-specific CSS classes
   const getStatusClasses = (status) => {
-    switch (status) {
+    const vnStatus = statusMapping[status] || status;
+    switch (vnStatus) {
       case 'Đang xử lý':
         return 'bg-green-100 text-green-800';
-      case 'Unpaid':
-        return 'bg-yellow-100 text-yellow-800';
       case 'Hoàn thành':
         return 'bg-blue-100 text-blue-800';
-      case 'Cancelled':
-        return 'bg-red-100 text-red-800';
+      case 'Khởi tạo':
+        return 'bg-gray-100 text-gray-800';
+      case 'Bị trả lại':
+        return 'bg-orange-100 text-orange-800';
       default:
         return '';
     }
+  };
+
+  const statusMapping = {
+    Processing: 'Đang xử lý',
+    Completed: 'Hoàn thành',
+    Draft: 'Khởi tạo',
+    Returned: 'Bị trả lại'
   };
 
   return (
@@ -144,8 +152,8 @@ const DataTable = ({ data, columns, onRowView, onRowEdit, onRowDelete, onRowClic
                           </button>
                         )}
                         {onRowToggleLock && (
-                          <button 
-                            onClick={() => onRowToggleLock(item)} 
+                          <button
+                            onClick={() => onRowToggleLock(item)}
                             className={`${item.isLocked ? 'text-red-500 hover:text-red-700' : 'text-green-500 hover:text-green-700'} ${lockingUserId === item._id ? 'opacity-50 cursor-not-allowed' : ''}`}
                             disabled={lockingUserId === item._id || item.role?.name === 'admin'}
                             title={item.role?.name === 'admin' ? 'Không thể khóa tài khoản admin' : (item.isLocked ? 'Mở khóa tài khoản' : 'Khóa tài khoản')}
@@ -168,15 +176,14 @@ const DataTable = ({ data, columns, onRowView, onRowEdit, onRowDelete, onRowClic
                     ) : (column.key === 'status') ? (
                       <span
                         className={`px-3 py-0 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClasses(
-                          item[column.key]
+                          statusMapping[item[column.key]] || item[column.key]
                         )}`}
                       >
-                        {item[column.key]}
+                        {statusMapping[item[column.key]] || item[column.key]}
                       </span>
                     ) : (column.key === 'isLocked') ? (
-                      <span className={`px-2 py-1 inline-flex text-xs leading-4 font-semibold rounded-full ${
-                        item[column.key] ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-                      }`}>
+                      <span className={`px-2 py-1 inline-flex text-xs leading-4 font-semibold rounded-full ${item[column.key] ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                        }`}>
                         {item[column.key] ? 'Đã khóa' : 'Bình thường'}
                       </span>
                     ) : (column.key === 'recivedDate' || column.key === 'recordedDate' || column.key === 'dueDate') ? (
