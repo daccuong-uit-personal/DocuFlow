@@ -212,6 +212,8 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, document }) =
                                                 {['mainProcessor', 'collaborator', 'inform'].map(role => {
                                                     const isAssignedRole = userRoles[user._id] === role;
                                                     const hasMainProcessor = Object.values(userRoles).includes('mainProcessor');
+                                                    const isAssignedAnyRole = Boolean(userRoles[user._id]); 
+
                                                     return (
                                                         <td
                                                             key={role}
@@ -222,9 +224,8 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, document }) =
                                                                 className="h-4 w-4 text-sky-600 border-gray-300 rounded focus:ring-sky-500"
                                                                 checked={isAssignedRole}
                                                                 disabled={
-                                                                    role === 'mainProcessor'
-                                                                        ? (userRoles[user._id] === 'mainProcessor' || (hasMainProcessor && userRoles[user._id] !== 'mainProcessor'))
-                                                                        : false 
+                                                                    isAssignedAnyRole
+                                                                    || (role === 'mainProcessor' && hasMainProcessor && !isAssignedRole) 
                                                                 }
                                                                 onChange={() => handleSelectUser(user, role)}
                                                             />

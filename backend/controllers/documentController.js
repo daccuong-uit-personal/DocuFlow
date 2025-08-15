@@ -30,6 +30,7 @@ exports.getDocuments = async (req, res, next) => {
 exports.getDocumentById = async (req, res, next) => {
     try {
         const document = await DocumentService.getDocumentById(req.params.id);
+
         res.status(200).json({ document });
     } catch (error) {
         next(error);
@@ -78,6 +79,12 @@ exports.createDocument = async (req, res, next) => {
         const documentData = req.body;
         const creatorId = req.user.id;
 
+        // Xử lý attachments từ req.files
+        if (req.files && req.files.length > 0) {
+            const attachmentPaths = req.files.map(file => `uploads/documents/${file.filename}`);
+            documentData.attachments = attachmentPaths;
+        }
+
         const newDocument = await DocumentService.createDocument(documentData, creatorId);
         res.status(201).json({ document: newDocument });
     } catch (error) {
@@ -122,6 +129,25 @@ exports.markAsComplete = async (req, res, next) => {
 
         const updatedDocuments = await DocumentService.markAsComplete(documentIds, processorId, note);
         res.status(200).json({ documents: updatedDocuments });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Controller để cập nhật văn bản với file upload
+exports.updateDocumentWithFiles = async (req, res, next) => {
+    try {
+        const documentData = req.body;
+        const documentId = req.params.id;
+
+        // Xử lý attachments từ req.files
+        if (req.files && req.files.length > 0) {
+            const attachmentPaths = req.files.map(file => `uploads/documents/${file.filename}`);
+            documentData.attachments = attachmentPaths;
+        }
+
+        const updatedDocument = await DocumentService.updateDocument(documentId, documentData);
+        res.status(200).json({ document: updatedDocument });
     } catch (error) {
         next(error);
     }

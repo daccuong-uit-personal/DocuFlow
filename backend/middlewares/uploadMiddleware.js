@@ -8,9 +8,11 @@ const storage = multer.diskStorage({
         cb(null, 'uploads/documents');
     },
     filename: (req, file, cb) => {
-        // Lưu đúng tên gốc: tên file + phần mở rộng
-        // Lưu ý: có thể trùng tên nếu người dùng upload trùng
-        cb(null, file.originalname);
+        // Tạo tên file duy nhất để tránh trùng lặp
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const fileExt = path.extname(file.originalname);
+        const fileName = path.basename(file.originalname, fileExt) + '-' + uniqueSuffix + fileExt;
+        cb(null, fileName);
     }
 });
 
