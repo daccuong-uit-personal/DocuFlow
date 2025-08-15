@@ -20,6 +20,7 @@ import DocumentProcessPage from './DocumentProcessPage';
 
 import { useDocuments } from '../../hooks/useDocuments';
 import { usePermissions } from '../../hooks/usePermissions';
+import { useAuth } from '../../hooks/useAuth';
 import constants from '../../utils/constants';
 
 // Mock data for filter options
@@ -79,6 +80,7 @@ const ordersColumns = [
 const DocumentListPage = () => {
   const { documents, loading, error, fetchDocuments, deleteDocuments } = useDocuments();
   const { hasAnyRole, hasRole } = usePermissions();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState('');
@@ -105,6 +107,8 @@ const DocumentListPage = () => {
   // 👉 CÁC STATE MỚI ĐỂ QUẢN LÝ CHECKBOX
   const [selectedDocumentIds, setSelectedDocumentIds] = useState([]);
   // ----------------------------------------------------
+
+  const isVanThu = user?.role.name === constants.ROLES.VAN_THU;
 
   const handleCreateDocument = () => {
     navigate('/documents/create');
@@ -347,12 +351,16 @@ const DocumentListPage = () => {
 
             {selectedDocumentIds.length > 0 ? (
               <>
-                <button
-                  onClick={handleDeleteSelectedDocuments}
-                  className="h-8 flex items-center px-1  py-2 text-xs font-medium text-red-600 bg-white border border-red-600 rounded-lg shadow-sm hover:bg-red-50">
-                  <TrashIcon className="h-5 w-5 mr-2" />
-                  Xóa ({selectedDocumentIds.length})
-                </button>
+                {isVanThu && (
+                  <button
+                    onClick={handleDeleteSelectedDocuments}
+                    className="h-8 flex items-center px-1 py-2 text-xs font-medium text-red-600 bg-white border border-red-600 rounded-lg shadow-sm hover:bg-red-50"
+                  >
+                    <TrashIcon className="h-5 w-5 mr-2" />
+                    Xóa ({selectedDocumentIds.length})
+                  </button>
+                )}
+
                 <button
                   onClick={handleTransferDocuments}
                   className="h-8 flex items-center px-1 py-2 text-xs font-medium text-green-600 bg-white border border-green-600 rounded-lg shadow-sm hover:bg-green-50">

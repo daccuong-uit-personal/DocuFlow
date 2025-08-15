@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
 
 import {
   PencilSquareIcon,
@@ -15,7 +16,11 @@ const DataTable = ({ data, columns, onRowView, onRowEdit, onRowDelete, onRowClic
 }) => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
 
+  const { user } = useAuth();
+  const isVanThu = user?.role.name === 'van_thu';
+  const isAdmin = user?.role.name === 'admin';
   const navigate = useNavigate();
+  console.log('DataTable: isVanThu', isVanThu, 'isAdmin', isAdmin);
 
   const selectAllCheckboxRef = useRef(null);
 
@@ -167,7 +172,7 @@ const DataTable = ({ data, columns, onRowView, onRowEdit, onRowDelete, onRowClic
                             )}
                           </button>
                         )}
-                        {onRowDelete && (
+                        {onRowDelete && (isVanThu || isAdmin) && (
                           <button onClick={() => onRowDelete(item)} className="text-red-500 hover:text-red-700">
                             <TrashIcon className="h-5 w-5" />
                           </button>

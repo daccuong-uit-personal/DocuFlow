@@ -5,6 +5,7 @@ const {
     createDocument,
     getDocumentById,
     updateDocument,
+    updateDocumentWithFiles,
     deleteDocument,
     getDocuments,
     deleteManyDocuments,
@@ -154,6 +155,14 @@ router.route('/bulk-delete').delete(authenticateToken, authorizePermissions(['do
 router.route("/:id").get(authenticateToken, authorizePermissions(['document:read']), getDocumentById);
 router.route("/:id").put(authenticateToken, authorizePermissions(['document:update']), updateDocument);
 router.route("/:id").delete(authenticateToken, authorizePermissions(['document:delete']), deleteDocument);
+
+// Route để cập nhật document với file upload
+router.route("/:id/update-with-files").put(
+    authenticateToken,
+    authorizePermissions(['document:update']),
+    upload.array('attachments', 10),
+    updateDocumentWithFiles
+);
 
 /**
  * @swagger

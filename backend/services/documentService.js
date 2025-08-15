@@ -5,8 +5,36 @@ const Document = require("../models/Document");
 const User = require("../models/User");
 const constants = require("../constants/constants");
 const { canDelegate, getAllLowerRoles } = require("./roleFlowService");
+const fs = require("fs");
+const path = require("path");
 
 const BusinessError = require("../utils/BusinessError");
+
+// Helper function để xóa file đính kèm
+const deleteAttachmentFile = (attachment) => {
+    try {
+        // Xác định đường dẫn file
+        let filePath;
+        if (attachment.startsWith('uploads/')) {
+            filePath = path.join(__dirname, '..', attachment);
+        } else {
+            filePath = path.join(__dirname, '..', 'uploads', 'documents', attachment);
+        }
+
+        // Kiểm tra file có tồn tại không
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            console.log(`Đã xóa file: ${filePath}`);
+            return true;
+        } else {
+            console.log(`File không tồn tại: ${filePath}`);
+            return false;
+        }
+    } catch (fileError) {
+        console.error(`Lỗi khi xóa file ${attachment}:`, fileError);
+        return false;
+    }
+};
 
 // Helper function để tạo một đối tượng lịch sử xử lý.
 const createHistoryEntry = (action, actorId, details) => {
@@ -82,11 +110,27 @@ exports.updateDocument = async (documentId, updatedData) => {
     }
 
     try {
-        const document = await Document.findByIdAndUpdate(documentId, updatedData, { new: true });
-
-        if (!document) {
+        // Lấy document hiện tại để so sánh attachments
+        const currentDocument = await Document.findById(documentId);
+        if (!currentDocument) {
             throw new BusinessError("Không tìm thấy văn bản.", 404);
         }
+
+        // Nếu có cập nhật attachments, xóa các file cũ không còn được sử dụng
+        if (updatedData.attachments && currentDocument.attachments) {
+            const oldAttachments = currentDocument.attachments;
+            const newAttachments = updatedData.attachments;
+
+            // Tìm các file cũ không còn trong danh sách mới
+            const filesToDelete = oldAttachments.filter(oldFile => !newAttachments.includes(oldFile));
+
+            // Xóa các file không còn được sử dụng
+            for (const fileToDelete of filesToDelete) {
+                deleteAttachmentFile(fileToDelete);
+            }
+        }
+
+        const document = await Document.findByIdAndUpdate(documentId, updatedData, { new: true });
 
         return document;
     } catch (error) {
@@ -102,10 +146,21 @@ exports.deleteDocument = async (documentId) => {
     }
 
     try {
-        const document = await Document.findByIdAndDelete(documentId);
+        // Lấy thông tin document trước khi xóa để có danh sách attachments
+        const document = await Document.findById(documentId);
 
         if (!document) {
             throw new BusinessError("Không tìm thấy văn bản.", 404);
+        }
+
+        // Xóa document khỏi database
+        await Document.findByIdAndDelete(documentId);
+
+        // Xóa các file đính kèm
+        if (document.attachments && document.attachments.length > 0) {
+            for (const attachment of document.attachments) {
+                deleteAttachmentFile(attachment);
+            }
         }
 
         return document;
@@ -129,8 +184,22 @@ exports.deleteManyDocuments = async (documentIds) => {
     }
 
     try {
+        // Lấy thông tin tất cả documents trước khi xóa để có danh sách attachments
+        const documents = await Document.find({ _id: { $in: documentIds } });
+
+        // Xóa documents khỏi database
         const result = await Document.deleteMany({ _id: { $in: documentIds } });
         console.log(`${result.deletedCount} documents deleted successfully.`);
+
+        // Xóa các file đính kèm của tất cả documents
+        for (const document of documents) {
+            if (document.attachments && document.attachments.length > 0) {
+                for (const attachment of document.attachments) {
+                    deleteAttachmentFile(attachment);
+                }
+            }
+        }
+
         return result;
     } catch (error) {
         if (error instanceof BusinessError) throw error;

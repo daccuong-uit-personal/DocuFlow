@@ -14,10 +14,18 @@ const AttachmentsList = ({ attachments, isEditMode, onRemoveFile }) => {
 
     // Hàm tiện ích để trích xuất tên file từ URL
     const extractFileName = (url) => {
+        if (!url) return '';
+        
         try {
-            const urlObject = new URL(url);
-            // Lấy phần cuối cùng của path
-            const pathSegments = urlObject.pathname.split('/');
+            // Nếu là URL đầy đủ
+            if (url.startsWith('http://') || url.startsWith('https://')) {
+                const urlObject = new URL(url);
+                const pathSegments = urlObject.pathname.split('/');
+                return pathSegments[pathSegments.length - 1];
+            }
+            
+            // Nếu là đường dẫn tương đối (uploads/documents/filename)
+            const pathSegments = url.split('/');
             return pathSegments[pathSegments.length - 1];
         } catch (e) {
             // Trường hợp không phải URL hợp lệ, trả về nguyên giá trị
@@ -40,7 +48,7 @@ const AttachmentsList = ({ attachments, isEditMode, onRemoveFile }) => {
         if (url.startsWith('http://') || url.startsWith('https://')) return url;
         // Mặc định backend phục vụ tĩnh tại /uploads
         const base = 'http://localhost:8000/';
-        return url.startsWith('uploads') ? base + url : base + 'uploads/documents/' + url;
+        return url.startsWith('uploads/') ? base + url : base + 'uploads/documents/' + url;
     };
 
     const handlePreview = (url) => {
