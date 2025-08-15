@@ -320,14 +320,18 @@ exports.forwardProcessDocuments = async (documentIds, assignerId, processors, no
                 const existingAssignment = doc.currentAssignments.find(a => a.userId.equals(p.userId));
 
                 if (!existingAssignment) {
-                    newAssignments.push(createProcessingAssignment(p, assignerId, note, deadline));
+                    const assignment = createProcessingAssignment(p, assignerId, note, deadline);
+                    if (p.role === 'inform') {
+                        assignment.status = 'completed';
+                    }
+                    newAssignments.push(assignment);
                 } else if (existingAssignment.status === 'processing') {
                     throw new BusinessError(
                         `Người dùng đã được phân công xử lý văn bản này, không thể chuyển tiếp. Vui lòng dùng chức năng chỉnh sửa phân công.`,
                         400
                     );
                 } else if (['completed', 'returned'].includes(existingAssignment.status)) {
-                    existingAssignment.status = 'processing';
+                    existingAssignment.status = p.role === 'inform' ? 'completed' : 'processing';
                     existingAssignment.note = note;
                     existingAssignment.deadline = deadline;
                     existingAssignment.assignedBy = assignerId;
@@ -587,7 +591,7 @@ exports.markAsComplete = async (documentIds, processorId, note) => {
                 }
             }
 
-            const unfinishedLower = myAssignedLower.some(a => a.status !== 'completed');
+            const unfinishedLower = myAssignedLower.some(a => !['completed', 'returned'].includes(a.status));
             if (unfinishedLower) {
                 throw new BusinessError(`Không thể hoàn thành vì vẫn còn người ở cấp dưới do bạn giao chưa xử lý xong trong văn bản ${doc._id}.`, 400);
             }
