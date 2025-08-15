@@ -6,7 +6,7 @@ import { useAuth } from '../../hooks/useAuth';
 
 import AttachmentsList from '../../components/common/AttachmentsList'
 import TransferHistoryTable from '../../components/common/TransferHistoryTable';
-import { formatDate, formatDateToInput } from '../../utils/helper';
+import { formatDate } from '../../utils/helper';
 import AssignedUsersList from '../../components/common/AssignedUsersList';
 
 const DocumentFormPage = ({ initialData, isEditMode = false, onSave, onProcessClick }) => {
@@ -23,6 +23,15 @@ const DocumentFormPage = ({ initialData, isEditMode = false, onSave, onProcessCl
 
     const hasDelegated = initialData?.document?.processingHistory?.some(
         h => h.action === 'forwardProcessing' && h.actorId?._id === user._id
+    );
+    const hasCompleted = initialData?.document?.processingHistory?.some(
+        h => h.action === 'completeProcessing' && h.actorId?._id === user._id
+    );
+    const hasReturned = initialData?.document?.processingHistory?.some(
+        h => h.action === 'returnDocument' && h.actorId?._id === user._id
+    );
+    const hasInform = initialData?.document?.currentAssignments?.some(
+        a => a.role === 'inform' && a.userId?._id === user._id
     );
 
     const hasCompleted = initialData?.document?.processingHistory?.some(
