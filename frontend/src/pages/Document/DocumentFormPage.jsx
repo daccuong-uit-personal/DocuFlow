@@ -34,6 +34,16 @@ const DocumentFormPage = ({ initialData, isEditMode = false, onSave, onProcessCl
         a => a.role === 'inform' && a.userId?._id === user._id
     );
 
+    const hasCompleted = initialData?.document?.processingHistory?.some(
+        h => h.action === 'completeProcessing' && h.actorId?._id === user._id
+    );
+    const hasReturned = initialData?.document?.processingHistory?.some(
+        h => h.action === 'returnDocument' && h.actorId?._id === user._id
+    );
+    const hasInform = initialData?.document?.currentAssignments?.some(
+        a => a.role === 'inform' && a.userId?._id === user._id
+    );
+
     const handleEditClick = () => {
         console.log('Bấm nút "Chỉnh sửa"');
         if (initialData?.document?._id) {

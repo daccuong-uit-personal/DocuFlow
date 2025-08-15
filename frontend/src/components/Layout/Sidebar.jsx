@@ -25,6 +25,7 @@ import {
   RectangleStackIcon,
 } from "@heroicons/react/24/solid";
 import { usePermissions } from "../../hooks/usePermissions";
+import { useAuth } from "../../hooks/useAuth";
 import constants from "../../utils/constants";
 import ProtectedComponent from "../common/ProtectedComponent";
 
@@ -34,6 +35,7 @@ const Sidebar = () => {
   const [open, setOpen] = React.useState([]);
   const location = useLocation();
   const { isAdmin, hasAnyRole } = usePermissions();
+  const { user } = useAuth();
 
   // Logic mới để thêm/xóa ID vào mảng
   const handleOpen = (value) => {
@@ -80,7 +82,7 @@ const Sidebar = () => {
       </div>
       <div className="px-4 py-2 mb-2">
         <Typography variant="small" color="blue-gray" className="opacity-70">
-          Phòng CNTT
+          {user?.departmentID?.name || user?.departmentID || 'Phòng ban'}
         </Typography>
       </div>
       <List>
