@@ -1,5 +1,5 @@
 // components/DocumentProcessModal.js
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 // Sửa đổi: Sử dụng DocumentContext trực tiếp thay vì useDocuments()
 import { useDocuments } from '../../hooks/useDocuments';
 import { useUsers } from '../../hooks/useUsers';
@@ -17,7 +17,7 @@ const roleMapping = {
     recall: 'Thu hồi',
 };
 
-const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, document, onDelegateSuccess }) => {
+const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, document }) => {
     const { user } = useAuth();
     const { users, fetchUsers } = useUsers();
     const {
@@ -121,6 +121,7 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, document, onD
         const finalDocumentIds = Array.isArray(documentIds) ? documentIds : [documentIds];
         switch (mode) {
             case 'delegate':
+                {
                 if (selectedUsers.length === 0) {
                     toast.warn("Vui lòng chọn ít nhất một người để chuyển xử lý.");
                     return;
@@ -138,11 +139,8 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, document, onD
                 }
 
                 await processDocuments(finalDocumentIds, delegatedProcessors, note, deadline);
-                onClose();
-                if (typeof onDelegateSuccess === 'function') {
-                    onDelegateSuccess();
-                }
                 break;
+            }
             case 'return':
                 await returnDocuments(finalDocumentIds, note);
                 break;
@@ -169,8 +167,6 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, document, onD
 
         onClose();
     };
-
-    const noAssignments = !document?.document?.currentAssignments || document.document.currentAssignments.length === 0;
 
     const renderContent = () => {
         // ... (phần UI không thay đổi)
@@ -214,7 +210,6 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, document, onD
                                                     </div>
                                                 </td>
                                                 {['mainProcessor', 'collaborator', 'inform'].map(role => {
-                                                    const isMainProcessor = role === 'mainProcessor';
                                                     const isAssignedRole = userRoles[user._id] === role;
                                                     const hasMainProcessor = Object.values(userRoles).includes('mainProcessor');
                                                     return (
@@ -229,7 +224,6 @@ const DocumentProcessPage = ({ isOpen, onClose, documentIds, mode, document, onD
                                                                 disabled={
                                                                     role === 'mainProcessor'
                                                                         ? (userRoles[user._id] === 'mainProcessor' || (hasMainProcessor && userRoles[user._id] !== 'mainProcessor'))
-                                                                        // : !noAssignments
                                                                         : false 
                                                                 }
                                                                 onChange={() => handleSelectUser(user, role)}

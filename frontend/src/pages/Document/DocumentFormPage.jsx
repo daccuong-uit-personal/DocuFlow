@@ -6,7 +6,7 @@ import { useAuth } from '../../hooks/useAuth';
 
 import AttachmentsList from '../../components/common/AttachmentsList'
 import TransferHistoryTable from '../../components/common/TransferHistoryTable';
-import { formatDate, formatDateToInput } from '../../utils/helper';
+import { formatDate } from '../../utils/helper';
 import AssignedUsersList from '../../components/common/AssignedUsersList';
 
 const DocumentFormPage = ({ initialData, isEditMode = false, onSave, onProcessClick }) => {
@@ -23,6 +23,15 @@ const DocumentFormPage = ({ initialData, isEditMode = false, onSave, onProcessCl
 
     const hasDelegated = initialData?.document?.processingHistory?.some(
         h => h.action === 'forwardProcessing' && h.actorId?._id === user._id
+    );
+    const hasCompleted = initialData?.document?.processingHistory?.some(
+        h => h.action === 'completeProcessing' && h.actorId?._id === user._id
+    );
+    const hasReturned = initialData?.document?.processingHistory?.some(
+        h => h.action === 'returnDocument' && h.actorId?._id === user._id
+    );
+    const hasInform = initialData?.document?.currentAssignments?.some(
+        a => a.role === 'inform' && a.userId?._id === user._id
     );
 
     const handleEditClick = () => {
@@ -189,7 +198,7 @@ const DocumentFormPage = ({ initialData, isEditMode = false, onSave, onProcessCl
                             Huỷ
                         </button>
                     )}
-                    {!isEditMode && (
+                    {!isEditMode && !hasInform && !hasReturned && !hasCompleted &&(
                         <>
                             {!hasRole('van_thu') && (
                                 <button onClick={() => onProcessClick(initialData.document._id, 'completed')}
@@ -223,7 +232,7 @@ const DocumentFormPage = ({ initialData, isEditMode = false, onSave, onProcessCl
                             Lưu
                         </button>
                     )}
-                    {!isEditMode && (
+                    {!isEditMode && !hasInform && !hasReturned && !hasCompleted &&(
                         <button onClick={handleEditClick}
                             className="h-8 flex items-center px-8 py-2 text-xs font-medium text-white bg-gradient-to-tl from-sky-300 from-30% to-sky-500 border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50">
                             Chỉnh sửa

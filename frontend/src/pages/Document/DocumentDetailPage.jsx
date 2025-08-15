@@ -19,10 +19,6 @@ const DocumentDetailPage = () => {
     const [documentIdForModal, setDocumentIdForModal] = useState(null);
     const [modalMode, setModalMode] = useState('completed');
 
-    const handleDelegatedSuccess = () => {
-        setHasDelegated(true);
-    };
-
     const handleOpenProcessModal = (docId, mode) => {
         console.log('23 DocumentDetailPage: Open process modal', docId, mode);
         setDocumentIdForModal(docId);
@@ -73,7 +69,6 @@ const DocumentDetailPage = () => {
                 documentIds={documentIdForModal ? [documentIdForModal] : []}
                 mode={modalMode}
                 document={selectedDocument}
-                onDelegateSuccess={handleDelegatedSuccess}
             />
         </div>
     );
